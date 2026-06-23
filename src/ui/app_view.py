@@ -447,6 +447,16 @@ class AppView:
                     login_btn,
                     ft.TextButton(
                         content=ft.Text(
+                            "¿Olvidaste tu contraseña?",
+                            color=C["primary"],
+                            size=12,
+                        ),
+                        on_click=lambda e: asyncio.create_task(
+                            self._show_forgot_password()
+                        ),
+                    ),
+                    ft.TextButton(
+                        content=ft.Text(
                             "¿No tienes cuenta? Regístrate",
                             color=C["primary"],
                             size=12,
@@ -494,6 +504,11 @@ class AppView:
         """Display user registration form."""
         from ui.register_view import show_register_form
         await show_register_form(self)
+
+    async def _show_forgot_password(self):
+        """Display forgot password form."""
+        from ui.forgot_password_view import show_forgot_password
+        await show_forgot_password(self)
 
     # ============ Main View ============
 
