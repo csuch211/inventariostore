@@ -2,9 +2,9 @@
 
 import asyncio
 
-from ui import admin_views, entity_views, sales_views, stock_views
-from ui import inventory_operations as p1
-from ui import advanced_features as p3
+from ui import admin, entity, sales, stock
+from ui import phase1 as p1
+from ui import phase3 as p3
 
 
 async def refresh_nav_badges(app) -> None:
@@ -29,9 +29,9 @@ async def navigate_to(app, route: str) -> None:
     elif route == "products":
         await app._show_products_list()
     elif route == "sales":
-        await sales_views.show_sales(app)
+        await sales.show_sales(app)
     elif route == "clients":
-        await entity_views.show_clients(app)
+        await entity.show_clients(app)
     elif route == "stock":
         await app._show_stock_management()
     elif route == "scanner":
@@ -41,23 +41,23 @@ async def navigate_to(app, route: str) -> None:
     elif route == "export":
         await app._show_export_options()
     elif route == "categories":
-        await entity_views.show_categories(app)
+        await entity.show_categories(app)
     elif route == "suppliers":
-        await entity_views.show_suppliers(app)
+        await entity.show_suppliers(app)
     elif route == "purchase_orders":
         await app._show_purchase_orders()
     elif route == "stock_alerts":
-        await stock_views.show_stock_alerts(app)
+        await stock.show_stock_alerts(app)
     elif route == "warehouses":
-        await stock_views.show_warehouses(app)
+        await stock.show_warehouses(app)
     elif route == "warehouse_stock":
-        await stock_views.show_warehouse_stock(app)
+        await stock.show_warehouse_stock(app)
     elif route == "backups":
-        await admin_views.show_backups(app)
+        await admin.show_backups(app)
     elif route == "users":
-        await admin_views.show_users(app)
+        await admin.show_users(app)
     elif route == "settings":
-        await admin_views.show_settings(app)
+        await admin.show_settings(app)
     elif route == "smtp_config":
         from ui.smtp_config_view import show_smtp_config
         await show_smtp_config(app)

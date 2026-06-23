@@ -2,11 +2,8 @@
 Phase 3 UI views — entry point.
 
 Re-exports the per-feature view functions split across:
-  - product_reports_views.py      : variantes, reportes
-  - notifications_image_views.py   : push queue, image search
-
-The i18n language picker view was removed; the sidebar `LangSwitcher`
-component (ui/components.py) is the single entry point for changing language.
+  - product_reports.py      : variantes, reportes
+  - notifications_image.py  : push queue, image search
 
 Adding a new view means:
   1) Define `async def show_<feature>(view)` in one of the parts.
@@ -15,11 +12,11 @@ Adding a new view means:
   4) Add nav_data_all entry with an icon and label.
 """
 
-from .product_reports_views import (
+from .product_reports import (
     show_reportes,
     show_variantes,
 )
-from .notifications_image_views import (
+from .notifications_image import (
     show_image_search,
     show_push_queue,
 )

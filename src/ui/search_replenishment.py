@@ -1,8 +1,8 @@
 """
 Phase 1 views — search and replenishment: advanced search, auto-restock.
 
-Companion to inventory_operations_views.py and pricing_inventory_views.py.
-Re-exported by ui/inventory_operations.py.
+Companion to inventory_operations.py and pricing_inventory.py.
+Re-exported by ui/phase1.py.
 """
 
 from __future__ import annotations

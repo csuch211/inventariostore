@@ -1,7 +1,7 @@
 """
 Phase 1 views — pricing and inventory: lots, prices, taxes, cash.
 
-Companion to inventory_operations_views.py. Re-exported by ui/inventory_operations.py.
+Companion to inventory_operations.py. Re-exported by ui/phase1.py.
 """
 
 from __future__ import annotations

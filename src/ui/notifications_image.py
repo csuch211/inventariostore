@@ -2,7 +2,7 @@
 Notifications and image search views — push queue and image search.
 
 Extracted from phase3_views_part2.py during AppView decomposition.
-Re-exported by ui/advanced_features.py.
+Re-exported by ui/phase3.py.
 """
 
 import asyncio
