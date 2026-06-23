@@ -106,6 +106,16 @@ async def navigate_to(app, route: str) -> None:
     elif route == "balance":
         from ui.accounting_views import show_balance
         await show_balance(app)
+    # Reportes financieros
+    elif route == "financial_dashboard":
+        from ui.financial_reports import show_financial_dashboard
+        await show_financial_dashboard(app)
+    elif route == "estado_resultados":
+        from ui.financial_reports import show_estado_resultados
+        await show_estado_resultados(app)
+    elif route == "balance_general":
+        from ui.financial_reports import show_balance_general
+        await show_balance_general(app)
 
 
 def refresh_nav_badges_sync(app) -> None:

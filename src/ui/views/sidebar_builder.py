@@ -62,6 +62,10 @@ ROUTE_PERMISSIONS = {
     "asientos": Perm.CONTABILIDAD_LEER,
     "plan_cuentas": Perm.CONTABILIDAD_PLAN_CUENTAS,
     "balance": Perm.CONTABILIDAD_LEER,
+    # Reportes financieros
+    "financial_dashboard": Perm.CONTABILIDAD_LEER,
+    "estado_resultados": Perm.CONTABILIDAD_LEER,
+    "balance_general": Perm.CONTABILIDAD_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -122,6 +126,10 @@ NAV_DATA_ALL = [
     ("asientos", ft.icons.Icons.BOOK, "Asientos Contables", None),
     ("plan_cuentas", ft.icons.Icons.ACCOUNT_TREE, "Plan de Cuentas", None),
     ("balance", ft.icons.Icons.BALANCE, "Balance Comprobación", None),
+    # Reportes Financieros
+    ("financial_dashboard", ft.icons.Icons.ANALYTICS, "Dashboard Financiero", None),
+    ("estado_resultados", ft.icons.Icons.ASSESSMENT, "Estado de Resultados", None),
+    ("balance_general", ft.icons.Icons.BALANCE, "Balance General", None),
 ]
 
 SECTIONS_DEF = [
@@ -171,6 +179,9 @@ SECTIONS_DEF = [
             "asientos",
             "plan_cuentas",
             "balance",
+            "financial_dashboard",
+            "estado_resultados",
+            "balance_general",
         ],
     ),
     (
