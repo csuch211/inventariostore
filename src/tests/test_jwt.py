@@ -185,6 +185,7 @@ class TestUserRegistration:
             username="newuser123",
             password="SecurePass1",
             nombre="Test User",
+            email="test@example.com",
         )
         result = asyncio.run(register(req))
         assert result["username"] == "newuser123"
@@ -201,6 +202,7 @@ class TestUserRegistration:
             username="duplicate_user",
             password="SecurePass1",
             nombre="First User",
+            email="first@example.com",
         )
         asyncio.run(register(req))
 
@@ -209,6 +211,7 @@ class TestUserRegistration:
             username="duplicate_user",
             password="SecurePass2",
             nombre="Second User",
+            email="second@example.com",
         )
         with pytest.raises(HTTPException) as exc_info:
             asyncio.run(register(req2))
@@ -225,6 +228,7 @@ class TestUserRegistration:
                 username="weakpassuser",
                 password="weak",
                 nombre="Weak User",
+                email="weak@example.com",
             )
 
     def test_register_invalid_username(self, ctrl):
@@ -238,6 +242,7 @@ class TestUserRegistration:
                 username="invalid user!",
                 password="SecurePass1",
                 nombre="Invalid User",
+                email="invalid@example.com",
             )
 
 
@@ -341,3 +346,120 @@ class TestPasswordReset:
         # Second token should work
         token_info2 = auth_svc.verify_password_reset_token(token2)
         assert token_info2 is not None
+
+
+class TestEmailVerification:
+    def test_create_and_verify_email_token(self, ctrl):
+        """Test creating and verifying an email verification token."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Get admin user ID
+        user = ctrl.db.obtener_usuario_por_username_full("admin")
+        assert user is not None
+
+        # Create token
+        token = auth_svc.create_email_verification_token(user["id"])
+        assert token is not None
+        assert len(token) > 0
+
+        # Verify token
+        token_info = auth_svc.verify_email_token(token)
+        assert token_info is not None
+        assert token_info["username"] == "admin"
+
+    def test_confirm_email_activates_account(self, ctrl):
+        """Test that confirming email activates the user account."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Create a user that is inactive
+        password_hash = AuthService.hash_password("TestPass1")
+        user_id = ctrl.db.crear_usuario(
+            username="inactive_user",
+            password_hash=password_hash,
+            nombre="Inactive User",
+            rol="viewer",
+        )
+        # Deactivate
+        with ctrl.db._get_connection() as conn:
+            conn.execute("UPDATE usuarios SET activo = 0 WHERE id = ?", (user_id,))
+            conn.commit()
+
+        # Verify user is inactive
+        assert auth_svc.is_email_verified(user_id) is False
+
+        # Create verification token
+        token = auth_svc.create_email_verification_token(user_id)
+        assert token is not None
+
+        # Confirm email
+        success = auth_svc.confirm_email(token)
+        assert success is True
+
+        # Verify user is now active
+        assert auth_svc.is_email_verified(user_id) is True
+
+    def test_confirm_email_invalid_token(self, ctrl):
+        """Test confirming email with invalid token fails."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+        success = auth_svc.confirm_email("invalid_token_123")
+        assert success is False
+
+    def test_confirm_email_already_verified(self, ctrl):
+        """Test confirming email for already verified user is idempotent."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Get admin user (already active)
+        user = ctrl.db.obtener_usuario_por_username_full("admin")
+        assert user is not None
+
+        # Create token
+        token = auth_svc.create_email_verification_token(user["id"])
+        assert token is not None
+
+        # Confirm email (should succeed even though already active)
+        success = auth_svc.confirm_email(token)
+        assert success is True
+
+    def test_email_token_cannot_be_reused(self, ctrl):
+        """Test that an email verification token cannot be used twice."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Create a user that is inactive
+        password_hash = AuthService.hash_password("TestPass1")
+        user_id = ctrl.db.crear_usuario(
+            username="reuse_user",
+            password_hash=password_hash,
+            nombre="Reuse User",
+            rol="viewer",
+        )
+        with ctrl.db._get_connection() as conn:
+            conn.execute("UPDATE usuarios SET activo = 0 WHERE id = ?", (user_id,))
+            conn.commit()
+
+        # Create and use token
+        token = auth_svc.create_email_verification_token(user_id)
+        success = auth_svc.confirm_email(token)
+        assert success is True
+
+        # Try to reuse token
+        success2 = auth_svc.confirm_email(token)
+        assert success2 is False
+
+    def test_resend_verification_endpoint(self, ctrl):
+        """Test resend verification endpoint returns success."""
+        from api.rest import resend_verification, ForgotPasswordRequest
+        import asyncio
+
+        req = ForgotPasswordRequest(username="admin")
+        result = asyncio.run(resend_verification(req))
+        assert "message" in result

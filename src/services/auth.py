@@ -408,3 +408,124 @@ class AuthService:
         except Exception as e:
             logger.error(f"Failed to reset password: {e}")
             return False
+
+    # ============ Email Verification Methods ============
+
+    def create_email_verification_token(self, user_id: int) -> str | None:
+        """Create an email verification token for a newly registered user."""
+        if not self._db:
+            return None
+
+        # Generate a random token
+        token = secrets.token_urlsafe(32)
+        # Hash the token for storage
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+        now = datetime.utcnow()
+        expires_at = now + timedelta(hours=24)  # Token expires in 24 hours
+
+        try:
+            with self._db._get_connection() as conn:
+                # Invalidate any existing verification tokens for this user
+                conn.execute(
+                    "UPDATE email_verification_tokens SET used = 1 WHERE user_id = ?",
+                    (user_id,),
+                )
+                # Create new token
+                conn.execute(
+                    """INSERT INTO email_verification_tokens (user_id, token_hash, expires_at, created_at)
+                       VALUES (?, ?, ?, ?)""",
+                    (user_id, token_hash, expires_at.isoformat(), now.isoformat()),
+                )
+                conn.commit()
+
+            logger.info(f"Email verification token created for user_id: {user_id}")
+            return token
+        except Exception as e:
+            logger.error(f"Failed to create email verification token: {e}")
+            return None
+
+    def verify_email_token(self, token: str) -> dict | None:
+        """Verify an email verification token. Returns user info or None."""
+        if not self._db:
+            return None
+
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+        try:
+            with self._db._get_connection() as conn:
+                row = conn.execute(
+                    """SELECT evt.*, u.username, u.nombre, u.activo
+                       FROM email_verification_tokens evt
+                       JOIN usuarios u ON u.id = evt.user_id
+                       WHERE evt.token_hash = ? AND evt.used = 0""",
+                    (token_hash,),
+                ).fetchone()
+
+                if not row:
+                    return None
+
+                # Check expiry
+                expires_at = datetime.fromisoformat(row["expires_at"])
+                if datetime.utcnow() > expires_at:
+                    logger.debug("Email verification token expired")
+                    return None
+
+                return {
+                    "user_id": row["user_id"],
+                    "username": row["username"],
+                    "nombre": row["nombre"],
+                    "token_id": row["id"],
+                    "already_verified": row["activo"] == 1,
+                }
+        except Exception as e:
+            logger.error(f"Failed to verify email token: {e}")
+            return None
+
+    def confirm_email(self, token: str) -> bool:
+        """Confirm a user's email by activating their account."""
+        if not self._db:
+            return False
+
+        # Verify the token first
+        token_info = self.verify_email_token(token)
+        if not token_info:
+            return False
+
+        # If already verified, return success (idempotent)
+        if token_info["already_verified"]:
+            return True
+
+        try:
+            with self._db._get_connection() as conn:
+                # Activate the user account
+                conn.execute(
+                    "UPDATE usuarios SET activo = 1, actualizado_en = ? WHERE id = ?",
+                    (datetime.utcnow().isoformat(), token_info["user_id"]),
+                )
+                # Mark the token as used
+                conn.execute(
+                    "UPDATE email_verification_tokens SET used = 1 WHERE id = ?",
+                    (token_info["token_id"],),
+                )
+                conn.commit()
+
+            logger.info(f"Email verified for user: {token_info['username']}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to confirm email: {e}")
+            return False
+
+    def is_email_verified(self, user_id: int) -> bool:
+        """Check if a user's email has been verified (account is active)."""
+        if not self._db:
+            return False
+
+        try:
+            with self._db._get_connection() as conn:
+                row = conn.execute(
+                    "SELECT activo FROM usuarios WHERE id = ?", (user_id,)
+                ).fetchone()
+                return row is not None and row["activo"] == 1
+        except Exception:
+            return False

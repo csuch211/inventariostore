@@ -108,6 +108,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_-]+$")
     password: str = Field(min_length=8, max_length=100)
     nombre: str = Field(min_length=2, max_length=100)
+    email: str = Field(max_length=200)
 
 
 # ----- Dependency wiring -----
@@ -284,7 +285,7 @@ async def login(req: LoginRequest):
 
 @app.post("/auth/register", status_code=201)
 async def register(req: RegisterRequest):
-    """Register a new user account."""
+    """Register a new user account. Account is inactive until email is verified."""
     from services.auth import AuthService
     from utils.logger import setup_logger as _setup_logger
     from utils.validators import Validator
@@ -298,6 +299,11 @@ async def register(req: RegisterRequest):
             detail="Username can only contain letters, numbers, hyphens, and underscores",
         )
 
+    # Validate email format
+    valid_email, email_msg = Validator.validate_email(req.email)
+    if not valid_email:
+        raise HTTPException(status_code=422, detail=email_msg)
+
     # Validate password strength
     valid, msg = Validator.validate_password(req.password)
     if not valid:
@@ -309,7 +315,7 @@ async def register(req: RegisterRequest):
     if existing:
         raise HTTPException(status_code=409, detail="Username already exists")
 
-    # Create user with default 'viewer' role (read-only)
+    # Create user as INACTIVE (requires email verification)
     try:
         password_hash = AuthService.hash_password(req.password)
         user_id = db.crear_usuario(
@@ -320,21 +326,100 @@ async def register(req: RegisterRequest):
             usuario="registration",
         )
 
+        # Deactivate the user until email is verified
+        with db._get_connection() as conn:
+            conn.execute(
+                "UPDATE usuarios SET activo = 0 WHERE id = ?", (user_id,)
+            )
+            conn.commit()
+
         # Assign default viewer role
         rol = db.obtener_rol_por_nombre("viewer")
         if rol:
             db.asignar_rol_a_usuario(user_id, rol["id"], usuario_actor="registration")
 
-        _logger.info(f"New user registered: {req.username}")
+        # Create verification token and send email
+        auth_svc = AuthService(db=db)
+        token = auth_svc.create_email_verification_token(user_id)
+
+        if token:
+            # Send verification email if SMTP is configured
+            from services.notifier import send_custom_alert, get_smtp_config, is_configured
+            cfg = get_smtp_config(db)
+            if is_configured(cfg):
+                send_custom_alert(
+                    db,
+                    subject="Verify Your Email - InventarioStore",
+                    body=f"Hola {req.nombre},\n\n"
+                         f"Gracias por registrarte en InventarioStore.\n\n"
+                         f"Para activar tu cuenta, usa este token:\n\n"
+                         f"{token}\n\n"
+                         f"Este token expira en 24 horas.\n\n"
+                         f"-- InventarioStore",
+                )
+
+        _logger.info(f"New user registered (pending verification): {req.username}")
 
         return {
-            "message": "User registered successfully",
+            "message": "Registration successful. Please check your email to verify your account.",
             "username": req.username,
             "id": user_id,
+            "email_sent": token is not None and is_configured(get_smtp_config(db)),
         }
     except Exception as e:
         _logger.error(f"Registration failed: {e}")
         raise HTTPException(status_code=500, detail="Registration failed")
+
+
+# ----- Email Verification -----
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+@app.post("/auth/verify-email")
+async def verify_email(req: VerifyEmailRequest):
+    """Verify a user's email address and activate their account."""
+    auth_svc = _get_auth_service()
+    success = auth_svc.confirm_email(req.token)
+
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+
+    return {"message": "Email verified successfully. Your account is now active."}
+
+
+@app.post("/auth/resend-verification")
+async def resend_verification(req: ForgotPasswordRequest):
+    """Resend email verification token. Always returns success to prevent enumeration."""
+    from services.notifier import send_custom_alert, get_smtp_config, is_configured
+
+    db = build_db()
+    user = db.obtener_usuario_por_username_full(req.username)
+
+    if not user or user.get("activo") == 1:
+        # User not found or already verified - return success anyway
+        return {"message": "If the username exists and needs verification, a new link has been sent"}
+
+    # Create new verification token
+    auth_svc = AuthService(db=db)
+    token = auth_svc.create_email_verification_token(user["id"])
+
+    if token:
+        cfg = get_smtp_config(db)
+        if is_configured(cfg):
+            send_custom_alert(
+                db,
+                subject="Verify Your Email - InventarioStore",
+                body=f"Hola {user.get('nombre', req.username)},\n\n"
+                     f"Usa este token para verificar tu cuenta:\n\n"
+                     f"{token}\n\n"
+                     f"Este token expira en 24 horas.\n\n"
+                     f"-- InventarioStore",
+            )
+
+    return {"message": "If the username exists and needs verification, a new link has been sent"}
 
 
 # ----- Password Reset -----
