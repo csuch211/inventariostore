@@ -298,3 +298,113 @@ class AuthService:
         except Exception as e:
             logger.error(f"Failed to revoke refresh token: {e}")
             return False
+
+    # ============ Password Reset Methods ============
+
+    def create_password_reset_token(self, username: str) -> str | None:
+        """Create a password reset token for a user. Returns the token or None if user not found."""
+        if not self._db:
+            return None
+
+        user = self._db.obtener_usuario_por_username_full(username)
+        if not user:
+            # Return None silently to avoid user enumeration
+            return None
+
+        # Generate a random token
+        token = secrets.token_urlsafe(32)
+        # Hash the token for storage (never store raw tokens)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+        now = datetime.utcnow()
+        expires_at = now + timedelta(hours=1)  # Token expires in 1 hour
+
+        try:
+            with self._db._get_connection() as conn:
+                # Invalidate any existing reset tokens for this user
+                conn.execute(
+                    "UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?",
+                    (user["id"],),
+                )
+                # Create new token
+                conn.execute(
+                    """INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at)
+                       VALUES (?, ?, ?, ?)""",
+                    (user["id"], token_hash, expires_at.isoformat(), now.isoformat()),
+                )
+                conn.commit()
+
+            logger.info(f"Password reset token created for user: {username}")
+            return token
+        except Exception as e:
+            logger.error(f"Failed to create password reset token: {e}")
+            return None
+
+    def verify_password_reset_token(self, token: str) -> dict | None:
+        """Verify a password reset token. Returns user info or None."""
+        if not self._db:
+            return None
+
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+        try:
+            with self._db._get_connection() as conn:
+                row = conn.execute(
+                    """SELECT prt.*, u.username, u.nombre
+                       FROM password_reset_tokens prt
+                       JOIN usuarios u ON u.id = prt.user_id
+                       WHERE prt.token_hash = ? AND prt.used = 0""",
+                    (token_hash,),
+                ).fetchone()
+
+                if not row:
+                    return None
+
+                # Check expiry
+                expires_at = datetime.fromisoformat(row["expires_at"])
+                if datetime.utcnow() > expires_at:
+                    logger.debug("Password reset token expired")
+                    return None
+
+                return {
+                    "user_id": row["user_id"],
+                    "username": row["username"],
+                    "nombre": row["nombre"],
+                    "token_id": row["id"],
+                }
+        except Exception as e:
+            logger.error(f"Failed to verify password reset token: {e}")
+            return None
+
+    def reset_password(self, token: str, new_password: str) -> bool:
+        """Reset a user's password using a valid reset token."""
+        if not self._db:
+            return False
+
+        # Verify the token first
+        token_info = self.verify_password_reset_token(token)
+        if not token_info:
+            return False
+
+        # Hash the new password
+        password_hash = _hash_password_new(new_password)
+
+        try:
+            with self._db._get_connection() as conn:
+                # Update the password
+                conn.execute(
+                    "UPDATE usuarios SET password_hash = ?, actualizado_en = ? WHERE id = ?",
+                    (password_hash, datetime.utcnow().isoformat(), token_info["user_id"]),
+                )
+                # Mark the token as used
+                conn.execute(
+                    "UPDATE password_reset_tokens SET used = 1 WHERE id = ?",
+                    (token_info["token_id"],),
+                )
+                conn.commit()
+
+            logger.info(f"Password reset for user: {token_info['username']}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to reset password: {e}")
+            return False

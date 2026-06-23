@@ -337,6 +337,72 @@ async def register(req: RegisterRequest):
         raise HTTPException(status_code=500, detail="Registration failed")
 
 
+# ----- Password Reset -----
+
+
+class ForgotPasswordRequest(BaseModel):
+    username: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=100)
+
+
+@app.post("/auth/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest):
+    """Request a password reset token. Always returns success to prevent user enumeration."""
+    from services.notifier import send_custom_alert, get_smtp_config, is_configured
+
+    auth_svc = _get_auth_service()
+
+    # Create the reset token (returns None if user not found, but we don't reveal that)
+    token = auth_svc.create_password_reset_token(req.username)
+
+    # Always return success message to prevent user enumeration
+    response = {"message": "If the username exists, a reset link has been sent"}
+
+    # If token was created and email is configured, send the reset email
+    if token:
+        db = build_db()
+        cfg = get_smtp_config(db)
+        if is_configured(cfg):
+            user = db.obtener_usuario_por_username_full(req.username)
+            if user:
+                reset_link = f"Use this token to reset your password: {token}"
+                send_custom_alert(
+                    db,
+                    subject="Password Reset Request - InventarioStore",
+                    body=f"Hola {user.get('nombre', req.username)},\n\n"
+                         f"Recibimos una solicitud para restablecer tu contraseña.\n\n"
+                         f"{reset_link}\n\n"
+                         f"Este token expira en 1 hora.\n\n"
+                         f"Si no solicitaste este cambio, ignora este mensaje.\n\n"
+                         f"-- InventarioStore",
+                )
+
+    return response
+
+
+@app.post("/auth/reset-password")
+async def reset_password(req: ResetPasswordRequest):
+    """Reset a user's password using a valid reset token."""
+    from utils.validators import Validator
+
+    # Validate new password strength
+    valid, msg = Validator.validate_password(req.new_password)
+    if not valid:
+        raise HTTPException(status_code=422, detail=msg)
+
+    auth_svc = _get_auth_service()
+    success = auth_svc.reset_password(req.token, req.new_password)
+
+    if not success:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    return {"message": "Password reset successfully"}
+
+
 @app.post("/auth/refresh")
 async def refresh_token(req: RefreshRequest):
     """Refresh an access token using a valid refresh token."""

@@ -239,3 +239,105 @@ class TestUserRegistration:
                 password="SecurePass1",
                 nombre="Invalid User",
             )
+
+
+class TestPasswordReset:
+    def test_forgot_password_returns_success(self, ctrl):
+        """Test forgot-password always returns success (prevents enumeration)."""
+        from api.rest import forgot_password, ForgotPasswordRequest
+        import asyncio
+
+        req = ForgotPasswordRequest(username="admin")
+        result = asyncio.run(forgot_password(req))
+        assert "message" in result
+
+    def test_forgot_password_nonexistent_user(self, ctrl):
+        """Test forgot-password for nonexistent user still returns success."""
+        from api.rest import forgot_password, ForgotPasswordRequest
+        import asyncio
+
+        req = ForgotPasswordRequest(username="nonexistent_user_xyz")
+        result = asyncio.run(forgot_password(req))
+        assert "message" in result
+
+    def test_create_and_verify_reset_token(self, ctrl):
+        """Test creating and verifying a password reset token."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Create token
+        token = auth_svc.create_password_reset_token("admin")
+        assert token is not None
+        assert len(token) > 0
+
+        # Verify token
+        token_info = auth_svc.verify_password_reset_token(token)
+        assert token_info is not None
+        assert token_info["username"] == "admin"
+
+    def test_reset_password_valid_token(self, ctrl):
+        """Test resetting password with valid token."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Create token
+        token = auth_svc.create_password_reset_token("admin")
+        assert token is not None
+
+        # Reset password
+        success = auth_svc.reset_password(token, "NewSecurePass1")
+        assert success is True
+
+        # Verify old password no longer works
+        user = ctrl.db.obtener_usuario_por_username_full("admin")
+        assert AuthService.verify_password(user["password_hash"], "Admin123") is False
+
+        # Verify new password works
+        assert AuthService.verify_password(user["password_hash"], "NewSecurePass1") is True
+
+    def test_reset_password_invalid_token(self, ctrl):
+        """Test resetting password with invalid token fails."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+        success = auth_svc.reset_password("invalid_token_123", "NewSecurePass1")
+        assert success is False
+
+    def test_reset_password_token_cannot_be_reused(self, ctrl):
+        """Test that a reset token cannot be used twice."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Create and use token
+        token = auth_svc.create_password_reset_token("admin")
+        success = auth_svc.reset_password(token, "NewSecurePass1")
+        assert success is True
+
+        # Try to reuse token
+        success2 = auth_svc.reset_password(token, "AnotherPass1")
+        assert success2 is False
+
+    def test_reset_password_invalidates_old_tokens(self, ctrl):
+        """Test that creating a new reset token invalidates old ones."""
+        from services.auth import AuthService
+
+        auth_svc = AuthService(db=ctrl.db)
+
+        # Create first token
+        token1 = auth_svc.create_password_reset_token("admin")
+        assert token1 is not None
+
+        # Create second token (should invalidate first)
+        token2 = auth_svc.create_password_reset_token("admin")
+        assert token2 is not None
+
+        # First token should no longer work
+        token_info = auth_svc.verify_password_reset_token(token1)
+        assert token_info is None
+
+        # Second token should work
+        token_info2 = auth_svc.verify_password_reset_token(token2)
+        assert token_info2 is not None
