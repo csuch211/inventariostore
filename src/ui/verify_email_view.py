@@ -56,7 +56,7 @@ async def show_verify_email(app, username: str = "", email: str = ""):
             app.page.update()
 
             # Call verify-email API
-            from api.rest import verify_email, VerifyEmailRequest
+            from api.rest import VerifyEmailRequest, verify_email
 
             req = VerifyEmailRequest(token=token)
             result = await verify_email(req)
@@ -83,7 +83,7 @@ async def show_verify_email(app, username: str = "", email: str = ""):
         app.page.update()
 
         try:
-            from api.rest import resend_verification, ForgotPasswordRequest
+            from api.rest import ForgotPasswordRequest, resend_verification
 
             req = ForgotPasswordRequest(username=username)
             await resend_verification(req)
@@ -157,7 +157,7 @@ async def show_verify_email(app, username: str = "", email: str = ""):
                         [
                             ft.Icon(ft.icons.Icons.INFO_OUTLINE, size=20, color=C["text_muted"]),
                             ft.Text(
-                                f"Se envió un email de verificación a:",
+                                "Se envió un email de verificación a:",
                                 size=11,
                                 color=C["text_muted"],
                             ),

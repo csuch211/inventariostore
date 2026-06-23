@@ -6,10 +6,11 @@ older releases is gone. This test guards against silently regressing to
 the old shortcut and breaking runtime at import time.
 """
 
-import flet as ft
 import re
 import sys
 from pathlib import Path
+
+import flet as ft
 
 _REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_REPO / "src"))

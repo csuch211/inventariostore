@@ -22,10 +22,10 @@ from __future__ import annotations
 import asyncio
 import importlib
 import inspect
+import json
 import shutil
 import sys
 import tempfile
-import json
 import time
 import traceback
 from pathlib import Path
@@ -49,7 +49,6 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 import config.settings as _settings  # noqa: E402
-
 from core.controller import InventarioController  # noqa: E402
 from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
 

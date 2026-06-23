@@ -12,13 +12,13 @@ Adding a new view means:
   4) Add nav_data_all entry with an icon and label.
 """
 
-from .product_reports import (
-    show_reportes,
-    show_variantes,
-)
 from .notifications_image import (
     show_image_search,
     show_push_queue,
+)
+from .product_reports import (
+    show_reportes,
+    show_variantes,
 )
 
 __all__ = [

@@ -332,9 +332,7 @@ async def register(req: RegisterRequest):
 
         # Deactivate the user until email is verified
         with db._get_connection() as conn:
-            conn.execute(
-                "UPDATE usuarios SET activo = 0 WHERE id = ?", (user_id,)
-            )
+            conn.execute("UPDATE usuarios SET activo = 0 WHERE id = ?", (user_id,))
             conn.commit()
 
         # Assign default viewer role
@@ -348,18 +346,19 @@ async def register(req: RegisterRequest):
 
         if token:
             # Send verification email if SMTP is configured
-            from services.notifier import send_custom_alert, get_smtp_config, is_configured
+            from services.notifier import get_smtp_config, is_configured, send_custom_alert
+
             cfg = get_smtp_config(db)
             if is_configured(cfg):
                 send_custom_alert(
                     db,
                     subject="Verify Your Email - InventarioStore",
                     body=f"Hola {req.nombre},\n\n"
-                         f"Gracias por registrarte en InventarioStore.\n\n"
-                         f"Para activar tu cuenta, usa este token:\n\n"
-                         f"{token}\n\n"
-                         f"Este token expira en 24 horas.\n\n"
-                         f"-- InventarioStore",
+                    f"Gracias por registrarte en InventarioStore.\n\n"
+                    f"Para activar tu cuenta, usa este token:\n\n"
+                    f"{token}\n\n"
+                    f"Este token expira en 24 horas.\n\n"
+                    f"-- InventarioStore",
                 )
 
         _logger.info(f"New user registered (pending verification): {req.username}")
@@ -397,14 +396,16 @@ async def verify_email(req: VerifyEmailRequest):
 @app.post("/auth/resend-verification")
 async def resend_verification(req: ForgotPasswordRequest):
     """Resend email verification token. Always returns success to prevent enumeration."""
-    from services.notifier import send_custom_alert, get_smtp_config, is_configured
+    from services.notifier import get_smtp_config, is_configured, send_custom_alert
 
     db = build_db()
     user = db.obtener_usuario_por_username_full(req.username)
 
     if not user or user.get("activo") == 1:
         # User not found or already verified - return success anyway
-        return {"message": "If the username exists and needs verification, a new link has been sent"}
+        return {
+            "message": "If the username exists and needs verification, a new link has been sent"
+        }
 
     # Create new verification token
     auth_svc = AuthService(db=db)
@@ -417,10 +418,10 @@ async def resend_verification(req: ForgotPasswordRequest):
                 db,
                 subject="Verify Your Email - InventarioStore",
                 body=f"Hola {user.get('nombre', req.username)},\n\n"
-                     f"Usa este token para verificar tu cuenta:\n\n"
-                     f"{token}\n\n"
-                     f"Este token expira en 24 horas.\n\n"
-                     f"-- InventarioStore",
+                f"Usa este token para verificar tu cuenta:\n\n"
+                f"{token}\n\n"
+                f"Este token expira en 24 horas.\n\n"
+                f"-- InventarioStore",
             )
 
     return {"message": "If the username exists and needs verification, a new link has been sent"}
@@ -441,7 +442,7 @@ class ResetPasswordRequest(BaseModel):
 @app.post("/auth/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
     """Request a password reset token. Always returns success to prevent user enumeration."""
-    from services.notifier import send_custom_alert, get_smtp_config, is_configured
+    from services.notifier import get_smtp_config, is_configured, send_custom_alert
 
     auth_svc = _get_auth_service()
 
@@ -463,11 +464,11 @@ async def forgot_password(req: ForgotPasswordRequest):
                     db,
                     subject="Password Reset Request - InventarioStore",
                     body=f"Hola {user.get('nombre', req.username)},\n\n"
-                         f"Recibimos una solicitud para restablecer tu contraseña.\n\n"
-                         f"{reset_link}\n\n"
-                         f"Este token expira en 1 hora.\n\n"
-                         f"Si no solicitaste este cambio, ignora este mensaje.\n\n"
-                         f"-- InventarioStore",
+                    f"Recibimos una solicitud para restablecer tu contraseña.\n\n"
+                    f"{reset_link}\n\n"
+                    f"Este token expira en 1 hora.\n\n"
+                    f"Si no solicitaste este cambio, ignora este mensaje.\n\n"
+                    f"-- InventarioStore",
                 )
 
     return response
@@ -545,9 +546,13 @@ async def test_smtp_connection(user: str = Depends(require_user)):
 
         return {"message": "SMTP connection successful", "host": cfg["host"], "port": cfg["port"]}
     except smtplib.SMTPAuthenticationError:
-        raise HTTPException(status_code=400, detail="SMTP authentication failed - check username/password")
+        raise HTTPException(
+            status_code=400, detail="SMTP authentication failed - check username/password"
+        )
     except smtplib.SMTPConnectError:
-        raise HTTPException(status_code=400, detail="Cannot connect to SMTP server - check host/port")
+        raise HTTPException(
+            status_code=400, detail="Cannot connect to SMTP server - check host/port"
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"SMTP connection failed: {str(e)}")
 
@@ -562,16 +567,18 @@ async def send_test_email(user: str = Depends(require_user)):
         db,
         subject="Test Email - InventarioStore",
         body=f"Hello!\n\n"
-             f"This is a test email from InventarioStore.\n\n"
-             f"If you received this, your SMTP configuration is working correctly.\n\n"
-             f"Sent at: {datetime.now(datetime.UTC).isoformat()}\n\n"
-             f"-- InventarioStore",
+        f"This is a test email from InventarioStore.\n\n"
+        f"If you received this, your SMTP configuration is working correctly.\n\n"
+        f"Sent at: {datetime.now(datetime.UTC).isoformat()}\n\n"
+        f"-- InventarioStore",
     )
 
     if result.get("sent"):
         return {"message": "Test email sent successfully", "to": result.get("to")}
     else:
-        raise HTTPException(status_code=500, detail=f"Failed to send test email: {result.get('reason')}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to send test email: {result.get('reason')}"
+        )
 
 
 @app.post("/auth/reset-password")

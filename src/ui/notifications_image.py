@@ -9,8 +9,13 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_ACCENT_COLOR, THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR
-from ui.components import AppHeader, FormField, SnackBarHelper
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from ui.components import AppHeader, SnackBarHelper
 from utils.i18n import t
 from utils.logger import setup_logger
 
@@ -91,48 +96,78 @@ async def show_push_queue(app):
             "fallido": sum(1 for j in jobs if j.get("estado") == "fallido"),
         }
 
-        stats_row = ft.Row([
-            ft.Container(
-                content=ft.Column([
-                    ft.Text("Total", size=12, color="#475569"),
-                    ft.Text(str(stats["total"]), size=24, weight=ft.FontWeight.BOLD),
-                ], spacing=4),
-                padding=16,
-                border_radius=8,
-                bgcolor="#F8FAFC",
-                width=120,
-            ),
-            ft.Container(
-                content=ft.Column([
-                    ft.Text("Pendientes", size=12, color=THEME_WARNING_COLOR),
-                    ft.Text(str(stats["pendiente"]), size=24, weight=ft.FontWeight.BOLD, color=THEME_WARNING_COLOR),
-                ], spacing=4),
-                padding=16,
-                border_radius=8,
-                bgcolor="#FEF3C7",
-                width=120,
-            ),
-            ft.Container(
-                content=ft.Column([
-                    ft.Text("Enviados", size=12, color=THEME_SUCCESS_COLOR),
-                    ft.Text(str(stats["enviado"]), size=24, weight=ft.FontWeight.BOLD, color=THEME_SUCCESS_COLOR),
-                ], spacing=4),
-                padding=16,
-                border_radius=8,
-                bgcolor="#DCFCE7",
-                width=120,
-            ),
-            ft.Container(
-                content=ft.Column([
-                    ft.Text("Fallidos", size=12, color=THEME_ACCENT_COLOR),
-                    ft.Text(str(stats["fallido"]), size=24, weight=ft.FontWeight.BOLD, color=THEME_ACCENT_COLOR),
-                ], spacing=4),
-                padding=16,
-                border_radius=8,
-                bgcolor="#FEE2E2",
-                width=120,
-            ),
-        ], spacing=15)
+        stats_row = ft.Row(
+            [
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text("Total", size=12, color="#475569"),
+                            ft.Text(str(stats["total"]), size=24, weight=ft.FontWeight.BOLD),
+                        ],
+                        spacing=4,
+                    ),
+                    padding=16,
+                    border_radius=8,
+                    bgcolor="#F8FAFC",
+                    width=120,
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text("Pendientes", size=12, color=THEME_WARNING_COLOR),
+                            ft.Text(
+                                str(stats["pendiente"]),
+                                size=24,
+                                weight=ft.FontWeight.BOLD,
+                                color=THEME_WARNING_COLOR,
+                            ),
+                        ],
+                        spacing=4,
+                    ),
+                    padding=16,
+                    border_radius=8,
+                    bgcolor="#FEF3C7",
+                    width=120,
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text("Enviados", size=12, color=THEME_SUCCESS_COLOR),
+                            ft.Text(
+                                str(stats["enviado"]),
+                                size=24,
+                                weight=ft.FontWeight.BOLD,
+                                color=THEME_SUCCESS_COLOR,
+                            ),
+                        ],
+                        spacing=4,
+                    ),
+                    padding=16,
+                    border_radius=8,
+                    bgcolor="#DCFCE7",
+                    width=120,
+                ),
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text("Fallidos", size=12, color=THEME_ACCENT_COLOR),
+                            ft.Text(
+                                str(stats["fallido"]),
+                                size=24,
+                                weight=ft.FontWeight.BOLD,
+                                color=THEME_ACCENT_COLOR,
+                            ),
+                        ],
+                        spacing=4,
+                    ),
+                    padding=16,
+                    border_radius=8,
+                    bgcolor="#FEE2E2",
+                    width=120,
+                ),
+            ],
+            spacing=15,
+        )
 
         body = (
             ft.Container(content=table, padding=20, expand=True)
@@ -172,25 +207,33 @@ async def show_push_queue(app):
             result = await controller.despachar_jobs_push()
             enviados = result.get("enviados", 0)
             fallidos = result.get("fallidos", 0)
-            SnackBarHelper.success(app.page, f"Despachados: {enviados} enviados, {fallidos} fallidos")
+            SnackBarHelper.success(
+                app.page, f"Despachados: {enviados} enviados, {fallidos} fallidos"
+            )
             await refresh()
         except Exception as ex:
             SnackBarHelper.error(app.page, str(ex))
 
     refresh_btn = ft.Button(
-        content=ft.Row([
-            ft.Icon(ft.icons.Icons.REFRESH, color="white"),
-            ft.Text("Actualizar", color="white"),
-        ], spacing=5),
+        content=ft.Row(
+            [
+                ft.Icon(ft.icons.Icons.REFRESH, color="white"),
+                ft.Text("Actualizar", color="white"),
+            ],
+            spacing=5,
+        ),
         on_click=handle_refresh,
         style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
     )
 
     despachar_btn = ft.Button(
-        content=ft.Row([
-            ft.Icon(ft.icons.Icons.SEND, color="white"),
-            ft.Text("Despachar Pendientes", color="white"),
-        ], spacing=5),
+        content=ft.Row(
+            [
+                ft.Icon(ft.icons.Icons.SEND, color="white"),
+                ft.Text("Despachar Pendientes", color="white"),
+            ],
+            spacing=5,
+        ),
         on_click=handle_despachar,
         style=ft.ButtonStyle(bgcolor=THEME_SUCCESS_COLOR),
     )
@@ -283,10 +326,13 @@ async def show_image_search(app):
     file_picker.on_result = on_file_picked
 
     pick_btn = ft.Button(
-        content=ft.Row([
-            ft.Icon(ft.icons.Icons.IMAGE, color="white"),
-            ft.Text("Seleccionar Imagen", color="white"),
-        ], spacing=5),
+        content=ft.Row(
+            [
+                ft.Icon(ft.icons.Icons.IMAGE, color="white"),
+                ft.Text("Seleccionar Imagen", color="white"),
+            ],
+            spacing=5,
+        ),
         on_click=pick_image,
         style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
     )
@@ -296,16 +342,19 @@ async def show_image_search(app):
             [
                 AppHeader.create(t("phase3.image_search.title"), "Búsqueda por imagen"),
                 ft.Container(
-                    content=ft.Column([
-                        ft.Text(
-                            "Selecciona una imagen para buscar productos similares en el inventario",
-                            size=14,
-                            color="#475569",
-                        ),
-                        ft.Container(height=10),
-                        pick_btn,
-                        status_text,
-                    ], spacing=10),
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                "Selecciona una imagen para buscar productos similares en el inventario",
+                                size=14,
+                                color="#475569",
+                            ),
+                            ft.Container(height=10),
+                            pick_btn,
+                            status_text,
+                        ],
+                        spacing=10,
+                    ),
                     padding=20,
                 ),
                 results_container,

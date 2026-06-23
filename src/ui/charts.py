@@ -181,9 +181,7 @@ class PieChart:
         legend_rows = []
 
         # Sort data by value descending for better visualization
-        sorted_data = sorted(
-            data, key=lambda x: int(x.get("total", 0)), reverse=True
-        )
+        sorted_data = sorted(data, key=lambda x: int(x.get("total", 0)), reverse=True)
 
         for idx, item in enumerate(sorted_data):
             value = int(item.get("total", 0))
@@ -198,9 +196,7 @@ class PieChart:
                     color=color,
                     radius=85,
                     title=f"{pct:.1f}%" if show_label else None,
-                    title_style=ft.TextStyle(
-                        size=12, color="white", weight=ft.FontWeight.BOLD
-                    ),
+                    title_style=ft.TextStyle(size=12, color="white", weight=ft.FontWeight.BOLD),
                 )
             )
 

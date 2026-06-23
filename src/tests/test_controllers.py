@@ -7,8 +7,8 @@ and handles business logic properly.
 from __future__ import annotations
 
 import pytest
-from services.permissions import Perm
 
+from services.permissions import Perm
 
 # ============ ProductController ============
 

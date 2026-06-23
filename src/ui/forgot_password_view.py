@@ -55,7 +55,7 @@ async def show_forgot_password(app):
             app.page.update()
 
             # Call forgot-password API
-            from api.rest import forgot_password, ForgotPasswordRequest
+            from api.rest import ForgotPasswordRequest, forgot_password
 
             req = ForgotPasswordRequest(username=username)
             result = await forgot_password(req)
@@ -251,6 +251,7 @@ async def show_reset_password(app, username: str = ""):
             return
 
         import re
+
         if not re.search(r"[A-Z]", password):
             error_text.value = "La contraseña debe contener al menos una mayúscula"
             app.page.update()
@@ -271,7 +272,7 @@ async def show_reset_password(app, username: str = ""):
             app.page.update()
 
             # Call reset-password API
-            from api.rest import reset_password, ResetPasswordRequest
+            from api.rest import ResetPasswordRequest, reset_password
 
             req = ResetPasswordRequest(token=token, new_password=password)
             result = await reset_password(req)

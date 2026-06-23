@@ -19,7 +19,7 @@ JWT support:
 import hashlib
 import hmac
 import secrets
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 import jwt
 

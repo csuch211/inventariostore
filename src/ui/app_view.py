@@ -69,10 +69,10 @@ from ui.components import (
     bind_page,
 )
 from ui.views.sidebar_builder import (
+    MOBILE_TOP_KEYS,
     NAV_DATA_ALL,
     ROUTE_PERMISSIONS,
     SECTIONS_DEF,
-    MOBILE_TOP_KEYS,
     build_sidebar_desktop,
     build_sidebar_mobile,
 )
@@ -451,9 +451,7 @@ class AppView:
                             color=C["primary"],
                             size=12,
                         ),
-                        on_click=lambda e: asyncio.create_task(
-                            self._show_forgot_password()
-                        ),
+                        on_click=lambda e: asyncio.create_task(self._show_forgot_password()),
                     ),
                     ft.TextButton(
                         content=ft.Text(
@@ -461,9 +459,7 @@ class AppView:
                             color=C["primary"],
                             size=12,
                         ),
-                        on_click=lambda e: asyncio.create_task(
-                            self._show_register_form()
-                        ),
+                        on_click=lambda e: asyncio.create_task(self._show_register_form()),
                     ),
                 ],
                 spacing=12,
@@ -503,11 +499,13 @@ class AppView:
     async def _show_register_form(self):
         """Display user registration form."""
         from ui.register_view import show_register_form
+
         await show_register_form(self)
 
     async def _show_forgot_password(self):
         """Display forgot password form."""
         from ui.forgot_password_view import show_forgot_password
+
         await show_forgot_password(self)
 
     # ============ Main View ============

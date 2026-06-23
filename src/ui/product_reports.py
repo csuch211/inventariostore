@@ -47,7 +47,11 @@ async def show_variantes(app):
                     atributos = json.loads(atributos)
                 except Exception:
                     pass
-            attr_str = ", ".join(f"{k}: {v2}" for k, v2 in atributos.items()) if isinstance(atributos, dict) else str(atributos)
+            attr_str = (
+                ", ".join(f"{k}: {v2}" for k, v2 in atributos.items())
+                if isinstance(atributos, dict)
+                else str(atributos)
+            )
 
             rows.append(
                 ft.DataRow(
@@ -65,20 +69,26 @@ async def show_variantes(app):
                             )
                         ),
                         ft.DataCell(
-                            ft.Row([
-                                ft.IconButton(
-                                    icon=ft.icons.Icons.EDIT,
-                                    icon_color=THEME_PRIMARY_COLOR,
-                                    tooltip="Editar stock",
-                                    on_click=lambda ev, vid=v["id"]: asyncio.create_task(edit_stock(vid)),
-                                ),
-                                ft.IconButton(
-                                    icon=ft.icons.Icons.DELETE,
-                                    icon_color=THEME_ACCENT_COLOR,
-                                    tooltip="Desactivar",
-                                    on_click=lambda ev, vid=v["id"]: asyncio.create_task(delete_variant(vid)),
-                                ),
-                            ])
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        icon=ft.icons.Icons.EDIT,
+                                        icon_color=THEME_PRIMARY_COLOR,
+                                        tooltip="Editar stock",
+                                        on_click=lambda ev, vid=v["id"]: asyncio.create_task(
+                                            edit_stock(vid)
+                                        ),
+                                    ),
+                                    ft.IconButton(
+                                        icon=ft.icons.Icons.DELETE,
+                                        icon_color=THEME_ACCENT_COLOR,
+                                        tooltip="Desactivar",
+                                        on_click=lambda ev, vid=v["id"]: asyncio.create_task(
+                                            delete_variant(vid)
+                                        ),
+                                    ),
+                                ]
+                            )
                         ),
                     ]
                 )
@@ -111,7 +121,9 @@ async def show_variantes(app):
         if app.main_view:
             app.main_view.content = ft.Column(
                 [
-                    AppHeader.create(t("phase3.variantes.title"), "Gestión de variantes de producto"),
+                    AppHeader.create(
+                        t("phase3.variantes.title"), "Gestión de variantes de producto"
+                    ),
                     ft.Container(
                         content=ft.Row([new_btn], alignment=ft.MainAxisAlignment.END),
                         padding=20,
@@ -128,7 +140,9 @@ async def show_variantes(app):
         prod_opts = [f"{p.get('id')} — {p.get('codigo')}" for p in productos]
         prod = FormField.create_dropdown("Producto", prod_opts)
         sku = FormField.create_text_field("SKU")
-        atributos = FormField.create_text_field("Atributos (JSON)", hint='{"talla":"M","color":"rojo"}')
+        atributos = FormField.create_text_field(
+            "Atributos (JSON)", hint='{"talla":"M","color":"rojo"}'
+        )
         cantidad = FormField.create_text_field("Cantidad", hint="0")
         precio = FormField.create_text_field("Precio override", hint="0.00")
         err = ft.Text("", color=THEME_ACCENT_COLOR)
@@ -163,7 +177,9 @@ async def show_variantes(app):
 
         dialog = ft.AlertDialog(
             title=ft.Text("Nueva Variante"),
-            content=ft.Column([prod, sku, atributos, cantidad, precio, err], tight=True, spacing=10),
+            content=ft.Column(
+                [prod, sku, atributos, cantidad, precio, err], tight=True, spacing=10
+            ),
             actions=[
                 ft.TextButton(t("common.cancel"), on_click=lambda ev: app.page.pop_dialog()),
                 ft.TextButton(t("common.save"), on_click=save),
@@ -216,10 +232,13 @@ async def show_variantes(app):
             SnackBarHelper.error(app.page, (res or {}).get("error", "Error"))
 
     new_btn = ft.Button(
-        content=ft.Row([
-            ft.Icon(ft.icons.Icons.ADD, color="white"),
-            ft.Text("Nueva Variante", color="white"),
-        ], spacing=5),
+        content=ft.Row(
+            [
+                ft.Icon(ft.icons.Icons.ADD, color="white"),
+                ft.Text("Nueva Variante", color="white"),
+            ],
+            spacing=5,
+        ),
         on_click=open_new,
         style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
     )
@@ -262,20 +281,26 @@ async def show_reportes(app):
                         ft.DataCell(ft.Text(col_str[:60])),
                         ft.DataCell(ft.Text(str(p.get("creado_en", "")))),
                         ft.DataCell(
-                            ft.Row([
-                                ft.IconButton(
-                                    icon=ft.icons.Icons.PLAY_ARROW,
-                                    icon_color=THEME_SUCCESS_COLOR,
-                                    tooltip="Ejecutar",
-                                    on_click=lambda ev, pp=p: asyncio.create_task(run_report(pp)),
-                                ),
-                                ft.IconButton(
-                                    icon=ft.icons.Icons.DELETE,
-                                    icon_color=THEME_ACCENT_COLOR,
-                                    tooltip="Eliminar",
-                                    on_click=lambda ev, pid=p["id"]: asyncio.create_task(delete_template(pid)),
-                                ),
-                            ])
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        icon=ft.icons.Icons.PLAY_ARROW,
+                                        icon_color=THEME_SUCCESS_COLOR,
+                                        tooltip="Ejecutar",
+                                        on_click=lambda ev, pp=p: asyncio.create_task(
+                                            run_report(pp)
+                                        ),
+                                    ),
+                                    ft.IconButton(
+                                        icon=ft.icons.Icons.DELETE,
+                                        icon_color=THEME_ACCENT_COLOR,
+                                        tooltip="Eliminar",
+                                        on_click=lambda ev, pid=p["id"]: asyncio.create_task(
+                                            delete_template(pid)
+                                        ),
+                                    ),
+                                ]
+                            )
                         ),
                     ]
                 )
@@ -327,7 +352,9 @@ async def show_reportes(app):
         nombre = FormField.create_text_field("Nombre del reporte")
         modulo_opts = [m.get("key", "") for m in modulos]
         modulo = FormField.create_dropdown("Módulo", modulo_opts)
-        columnas = FormField.create_text_field("Columnas (separadas por coma)", hint="codigo,nombre,precio")
+        columnas = FormField.create_text_field(
+            "Columnas (separadas por coma)", hint="codigo,nombre,precio"
+        )
         err = ft.Text("", color=THEME_ACCENT_COLOR)
 
         async def save(ev):
@@ -388,10 +415,13 @@ async def show_reportes(app):
             SnackBarHelper.error(app.page, (res or {}).get("error", "Error"))
 
     new_btn = ft.Button(
-        content=ft.Row([
-            ft.Icon(ft.icons.Icons.ADD, color="white"),
-            ft.Text("Nueva Plantilla", color="white"),
-        ], spacing=5),
+        content=ft.Row(
+            [
+                ft.Icon(ft.icons.Icons.ADD, color="white"),
+                ft.Text("Nueva Plantilla", color="white"),
+            ],
+            spacing=5,
+        ),
         on_click=open_new,
         style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
     )

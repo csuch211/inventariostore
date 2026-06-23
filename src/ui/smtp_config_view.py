@@ -5,13 +5,10 @@ Provides presets for common providers (Gmail, Outlook, Yahoo),
 connection testing, and test email sending.
 """
 
-import asyncio
-
 import flet as ft
 
 from config.settings import THEME_PRIMARY_COLOR
 from ui.components import AppHeader, SnackBarHelper
-from utils.i18n import t
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -147,15 +144,17 @@ async def show_smtp_config(app):
     async def handle_save(e):
         """Save SMTP configuration."""
         try:
-            await app.controller.guardar_config_smtp({
-                "smtp_host": host_field.value,
-                "smtp_port": port_field.value,
-                "smtp_user": user_field.value,
-                "smtp_password": password_field.value,
-                "smtp_from_email": from_email_field.value,
-                "smtp_to_email": from_email_field.value,
-                "notify_low_stock": "si" if enabled_switch.value else "no",
-            })
+            await app.controller.guardar_config_smtp(
+                {
+                    "smtp_host": host_field.value,
+                    "smtp_port": port_field.value,
+                    "smtp_user": user_field.value,
+                    "smtp_password": password_field.value,
+                    "smtp_from_email": from_email_field.value,
+                    "smtp_to_email": from_email_field.value,
+                    "notify_low_stock": "si" if enabled_switch.value else "no",
+                }
+            )
             SnackBarHelper.success(app.page, "Configuración SMTP guardada")
             status_text.value = "✓ Configuración guardada"
             status_text.color = "green"
@@ -207,15 +206,17 @@ async def show_smtp_config(app):
 
         try:
             # Save config first
-            await app.controller.guardar_config_smtp({
-                "smtp_host": host_field.value,
-                "smtp_port": port_field.value,
-                "smtp_user": user_field.value,
-                "smtp_password": password_field.value,
-                "smtp_from_email": from_email_field.value,
-                "smtp_to_email": from_email_field.value,
-                "notify_low_stock": "si" if enabled_switch.value else "no",
-            })
+            await app.controller.guardar_config_smtp(
+                {
+                    "smtp_host": host_field.value,
+                    "smtp_port": port_field.value,
+                    "smtp_user": user_field.value,
+                    "smtp_password": password_field.value,
+                    "smtp_from_email": from_email_field.value,
+                    "smtp_to_email": from_email_field.value,
+                    "notify_low_stock": "si" if enabled_switch.value else "no",
+                }
+            )
 
             result = await app.controller.enviar_alerta_stock()
             if result.get("sent"):
@@ -236,44 +237,59 @@ async def show_smtp_config(app):
     # Build the form layout
     content = ft.Column(
         [
-            AppHeader.create("Configuración de Email", "Configura el servidor SMTP para notificaciones"),
+            AppHeader.create(
+                "Configuración de Email", "Configura el servidor SMTP para notificaciones"
+            ),
             ft.Container(
                 content=ft.Column(
                     [
                         # Provider preset
-                        ft.Text("Proveedor", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]),
+                        ft.Text(
+                            "Proveedor", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]
+                        ),
                         provider_dropdown,
                         note_text,
                         ft.Divider(),
-
                         # Server settings
-                        ft.Text("Servidor SMTP", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]),
+                        ft.Text(
+                            "Servidor SMTP",
+                            size=14,
+                            weight=ft.FontWeight.BOLD,
+                            color=C["text_primary"],
+                        ),
                         ft.Row([host_field, port_field], spacing=10),
                         ft.Divider(),
-
                         # Credentials
-                        ft.Text("Credenciales", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]),
+                        ft.Text(
+                            "Credenciales",
+                            size=14,
+                            weight=ft.FontWeight.BOLD,
+                            color=C["text_primary"],
+                        ),
                         user_field,
                         password_field,
                         ft.Divider(),
-
                         # Sender
-                        ft.Text("Remitente", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]),
+                        ft.Text(
+                            "Remitente", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]
+                        ),
                         from_email_field,
                         ft.Divider(),
-
                         # Options
-                        ft.Text("Opciones", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]),
+                        ft.Text(
+                            "Opciones", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]
+                        ),
                         enabled_switch,
                         ft.Divider(),
-
                         # Action buttons
                         ft.Row(
                             [
                                 ft.Button(
                                     content=ft.Text("Guardar"),
                                     on_click=handle_save,
-                                    style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR, color="white"),
+                                    style=ft.ButtonStyle(
+                                        bgcolor=THEME_PRIMARY_COLOR, color="white"
+                                    ),
                                 ),
                                 ft.OutlinedButton(
                                     content=ft.Text("Probar Conexión"),

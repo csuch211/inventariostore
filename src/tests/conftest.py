@@ -4,17 +4,17 @@ Shared fixtures for pytest-based test discovery.
 
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
+import sys
 import tempfile
+import types
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-import asyncio
 import pytest
-import sys
-import types
 
 # ---------------------------------------------------------------------------
 # Isolated test database

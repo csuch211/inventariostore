@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-import pytest
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
-from services.auth import AuthService
+import pytest
+
 from config.settings import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
-    REFRESH_TOKEN_EXPIRE_DAYS,
-    JWT_SECRET_KEY,
     JWT_ALGORITHM,
+    JWT_SECRET_KEY,
+    REFRESH_TOKEN_EXPIRE_DAYS,
 )
+from services.auth import AuthService
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ class TestPasswordHashing:
 
     def test_legacy_password_verification(self):
         # Test legacy format (no colon = legacy salt)
-        from services.auth import _hash_with_salt, _LEGACY_SALT
+        from services.auth import _LEGACY_SALT, _hash_with_salt
 
         legacy_hash = _hash_with_salt("Admin123", _LEGACY_SALT)
         assert AuthService.verify_password(legacy_hash, "Admin123") is True
@@ -112,7 +113,9 @@ class TestJWTAccessTokens:
             "type": "access",
         }
         # Sign with wrong key (must be >= 32 bytes for HS256)
-        token = jwt.encode(payload, "wrong-secret-key-that-is-long-enough-for-hmac", algorithm=JWT_ALGORITHM)
+        token = jwt.encode(
+            payload, "wrong-secret-key-that-is-long-enough-for-hmac", algorithm=JWT_ALGORITHM
+        )
         result = auth_service.verify_access_token(token)
         assert result is None
 
@@ -178,8 +181,9 @@ class TestAuthIntegration:
 class TestUserRegistration:
     def test_register_valid_user(self, ctrl):
         """Test registering a new valid user."""
-        from api.rest import register, RegisterRequest
         import asyncio
+
+        from api.rest import RegisterRequest, register
 
         req = RegisterRequest(
             username="newuser123",
@@ -193,9 +197,11 @@ class TestUserRegistration:
 
     def test_register_duplicate_username(self, ctrl):
         """Test registering with existing username fails."""
-        from api.rest import register, RegisterRequest
-        from fastapi import HTTPException
         import asyncio
+
+        from fastapi import HTTPException
+
+        from api.rest import RegisterRequest, register
 
         # First registration
         req = RegisterRequest(
@@ -220,6 +226,7 @@ class TestUserRegistration:
     def test_register_weak_password(self, ctrl):
         """Test registration with weak password fails (Pydantic validation)."""
         from pydantic import ValidationError
+
         from api.rest import RegisterRequest
 
         # Password too short (min 8 chars)
@@ -234,6 +241,7 @@ class TestUserRegistration:
     def test_register_invalid_username(self, ctrl):
         """Test registration with invalid username fails (Pydantic validation)."""
         from pydantic import ValidationError
+
         from api.rest import RegisterRequest
 
         # Username with invalid characters
@@ -249,8 +257,9 @@ class TestUserRegistration:
 class TestPasswordReset:
     def test_forgot_password_returns_success(self, ctrl):
         """Test forgot-password always returns success (prevents enumeration)."""
-        from api.rest import forgot_password, ForgotPasswordRequest
         import asyncio
+
+        from api.rest import ForgotPasswordRequest, forgot_password
 
         req = ForgotPasswordRequest(username="admin")
         result = asyncio.run(forgot_password(req))
@@ -258,8 +267,9 @@ class TestPasswordReset:
 
     def test_forgot_password_nonexistent_user(self, ctrl):
         """Test forgot-password for nonexistent user still returns success."""
-        from api.rest import forgot_password, ForgotPasswordRequest
         import asyncio
+
+        from api.rest import ForgotPasswordRequest, forgot_password
 
         req = ForgotPasswordRequest(username="nonexistent_user_xyz")
         result = asyncio.run(forgot_password(req))
@@ -457,8 +467,9 @@ class TestEmailVerification:
 
     def test_resend_verification_endpoint(self, ctrl):
         """Test resend verification endpoint returns success."""
-        from api.rest import resend_verification, ForgotPasswordRequest
         import asyncio
+
+        from api.rest import ForgotPasswordRequest, resend_verification
 
         req = ForgotPasswordRequest(username="admin")
         result = asyncio.run(resend_verification(req))
@@ -468,8 +479,9 @@ class TestEmailVerification:
 class TestSMTPConfig:
     def test_get_smtp_config(self, ctrl):
         """Test getting SMTP configuration."""
-        from api.rest import get_smtp_config_endpoint
         import asyncio
+
+        from api.rest import get_smtp_config_endpoint
 
         result = asyncio.run(get_smtp_config_endpoint(user="admin"))
         assert "host" in result
@@ -478,8 +490,9 @@ class TestSMTPConfig:
 
     def test_save_smtp_config(self, ctrl):
         """Test saving SMTP configuration."""
-        from api.rest import save_smtp_config, SMTPConfigIn
         import asyncio
+
+        from api.rest import SMTPConfigIn, save_smtp_config
 
         req = SMTPConfigIn(
             host="smtp.gmail.com",
@@ -494,6 +507,7 @@ class TestSMTPConfig:
 
         # Verify config was saved
         from api.rest import get_smtp_config_endpoint
+
         config = asyncio.run(get_smtp_config_endpoint(user="admin"))
         assert config["host"] == "smtp.gmail.com"
         assert config["enabled"] is True

@@ -10,7 +10,6 @@ import re
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR
 from ui.components import SnackBarHelper
 from utils.logger import setup_logger
 
@@ -205,7 +204,7 @@ async def show_register_form(app):
             app.page.update()
 
             # Call registration API
-            from api.rest import register, RegisterRequest
+            from api.rest import RegisterRequest, register
 
             req = RegisterRequest(
                 username=username,
@@ -219,6 +218,7 @@ async def show_register_form(app):
 
             # Redirect to email verification screen
             from ui.verify_email_view import show_verify_email
+
             await show_verify_email(app, username=username, email=email)
 
         except Exception as ex:
