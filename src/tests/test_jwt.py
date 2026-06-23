@@ -173,3 +173,69 @@ class TestAuthIntegration:
         await ctrl.login("admin", "Admin123")
         assert ctrl.current_user == "admin"
         assert len(ctrl.current_user_permissions) > 0
+
+
+class TestUserRegistration:
+    def test_register_valid_user(self, ctrl):
+        """Test registering a new valid user."""
+        from api.rest import register, RegisterRequest
+        import asyncio
+
+        req = RegisterRequest(
+            username="newuser123",
+            password="SecurePass1",
+            nombre="Test User",
+        )
+        result = asyncio.run(register(req))
+        assert result["username"] == "newuser123"
+        assert result["id"] is not None
+
+    def test_register_duplicate_username(self, ctrl):
+        """Test registering with existing username fails."""
+        from api.rest import register, RegisterRequest
+        from fastapi import HTTPException
+        import asyncio
+
+        # First registration
+        req = RegisterRequest(
+            username="duplicate_user",
+            password="SecurePass1",
+            nombre="First User",
+        )
+        asyncio.run(register(req))
+
+        # Second registration should fail
+        req2 = RegisterRequest(
+            username="duplicate_user",
+            password="SecurePass2",
+            nombre="Second User",
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            asyncio.run(register(req2))
+        assert exc_info.value.status_code == 409
+
+    def test_register_weak_password(self, ctrl):
+        """Test registration with weak password fails (Pydantic validation)."""
+        from pydantic import ValidationError
+        from api.rest import RegisterRequest
+
+        # Password too short (min 8 chars)
+        with pytest.raises(ValidationError):
+            RegisterRequest(
+                username="weakpassuser",
+                password="weak",
+                nombre="Weak User",
+            )
+
+    def test_register_invalid_username(self, ctrl):
+        """Test registration with invalid username fails (Pydantic validation)."""
+        from pydantic import ValidationError
+        from api.rest import RegisterRequest
+
+        # Username with invalid characters
+        with pytest.raises(ValidationError):
+            RegisterRequest(
+                username="invalid user!",
+                password="SecurePass1",
+                nombre="Invalid User",
+            )

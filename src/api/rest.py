@@ -23,6 +23,7 @@ Security model:
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -101,6 +102,12 @@ class PushEnqueueIn(BaseModel):
 class LanguageIn(BaseModel):
     usuario: str
     idioma: str
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=50, pattern=r"^[A-Za-z0-9_-]+$")
+    password: str = Field(min_length=8, max_length=100)
+    nombre: str = Field(min_length=2, max_length=100)
 
 
 # ----- Dependency wiring -----
@@ -273,6 +280,61 @@ async def login(req: LoginRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.post("/auth/register", status_code=201)
+async def register(req: RegisterRequest):
+    """Register a new user account."""
+    from services.auth import AuthService
+    from utils.logger import setup_logger as _setup_logger
+    from utils.validators import Validator
+
+    _logger = _setup_logger(__name__)
+
+    # Validate username
+    if not re.match(r"^[A-Za-z0-9_-]+$", req.username):
+        raise HTTPException(
+            status_code=422,
+            detail="Username can only contain letters, numbers, hyphens, and underscores",
+        )
+
+    # Validate password strength
+    valid, msg = Validator.validate_password(req.password)
+    if not valid:
+        raise HTTPException(status_code=422, detail=msg)
+
+    # Check if username already exists
+    db = build_db()
+    existing = db.obtener_usuario_por_username_full(req.username)
+    if existing:
+        raise HTTPException(status_code=409, detail="Username already exists")
+
+    # Create user with default 'viewer' role (read-only)
+    try:
+        password_hash = AuthService.hash_password(req.password)
+        user_id = db.crear_usuario(
+            username=req.username,
+            password_hash=password_hash,
+            nombre=req.nombre,
+            rol="viewer",
+            usuario="registration",
+        )
+
+        # Assign default viewer role
+        rol = db.obtener_rol_por_nombre("viewer")
+        if rol:
+            db.asignar_rol_a_usuario(user_id, rol["id"], usuario_actor="registration")
+
+        _logger.info(f"New user registered: {req.username}")
+
+        return {
+            "message": "User registered successfully",
+            "username": req.username,
+            "id": user_id,
+        }
+    except Exception as e:
+        _logger.error(f"Registration failed: {e}")
+        raise HTTPException(status_code=500, detail="Registration failed")
 
 
 @app.post("/auth/refresh")
