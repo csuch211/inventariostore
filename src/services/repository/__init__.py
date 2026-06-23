@@ -8,6 +8,7 @@ BaseRepository for shared connection pooling and audit logging.
 from services.repository.accounting_repo import AccountingRepository
 from services.repository.base import BaseRepository
 from services.repository.config_repo import ConfigRepository
+from services.repository.crm_repo import CRMRepository
 from services.repository.employee_repo import EmployeeRepository
 from services.repository.hr_repo import HRRepository
 from services.repository.inventory_repo import InventoryRepository
@@ -21,6 +22,7 @@ __all__ = [
     "AccountingRepository",
     "BaseRepository",
     "ConfigRepository",
+    "CRMRepository",
     "EmployeeRepository",
     "HRRepository",
     "InventoryRepository",

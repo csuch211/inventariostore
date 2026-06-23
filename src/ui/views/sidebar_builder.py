@@ -75,6 +75,9 @@ ROUTE_PERMISSIONS = {
     "empleados": Perm.USUARIOS_LEER,
     # Compras
     "cotizaciones": Perm.ORDENES_LEER,
+    # CRM
+    "contactos": Perm.CLIENTES_LEER,
+    "pipeline": Perm.CLIENTES_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -148,6 +151,9 @@ NAV_DATA_ALL = [
     ("empleados", ft.icons.Icons.PEOPLE, "Empleados", None),
     # Compras
     ("cotizaciones", ft.icons.Icons.DESCRIPTION, "Cotizaciones", None),
+    # CRM
+    ("contactos", ft.icons.Icons.CONTACTS, "Contactos CRM", None),
+    ("pipeline", ft.icons.Icons.PIPELINE, "Pipeline Ventas", None),
 ]
 
 SECTIONS_DEF = [
@@ -221,6 +227,13 @@ SECTIONS_DEF = [
         "sidebar.section.purchasing",
         [
             "cotizaciones",
+        ],
+    ),
+    (
+        "sidebar.section.crm",
+        [
+            "contactos",
+            "pipeline",
         ],
     ),
     (

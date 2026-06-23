@@ -11,6 +11,7 @@ from collections.abc import Callable
 from core.controllers.accounting_controller import AccountingController
 from core.controllers.admin_controller import AdminController
 from core.controllers.auth_controller import AuthController
+from core.controllers.crm_controller import CRMController
 from core.controllers.hr_controller import HRController
 from core.controllers.invoice_controller import InvoiceController
 from core.controllers.inventory_controller import InventoryController
@@ -50,6 +51,7 @@ class InventarioController:
         self._inventory = InventoryController(self.db, self.auth_service, self.export_service)
         self._hr = HRController(self.db, self.auth_service, self.export_service)
         self._purchasing = PurchasingController(self.db, self.auth_service, self.export_service)
+        self._crm = CRMController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -97,6 +99,7 @@ class InventarioController:
             self._inventory,
             self._hr,
             self._purchasing,
+            self._crm,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -1214,4 +1217,74 @@ class InventarioController:
     ) -> list[dict]:
         return await self._purchasing.obtener_recepciones(
             proveedor_id=proveedor_id
+        )
+
+    # ============ CRM ============
+
+    async def crear_contacto(self, **kwargs) -> tuple[bool, dict]:
+        return await self._crm.crear_contacto(**kwargs)
+
+    async def obtener_contacto(self, contacto_id: int) -> dict | None:
+        return await self._crm.obtener_contacto(contacto_id)
+
+    async def obtener_contactos(
+        self, empresa: str | None = None, estado: str = "activo"
+    ) -> list[dict]:
+        return await self._crm.obtener_contactos(empresa=empresa, estado=estado)
+
+    async def actualizar_contacto(self, contacto_id: int, **kwargs) -> tuple[bool, dict]:
+        return await self._crm.actualizar_contacto(contacto_id, **kwargs)
+
+    async def eliminar_contacto(self, contacto_id: int) -> tuple[bool, dict]:
+        return await self._crm.eliminar_contacto(contacto_id)
+
+    async def buscar_contactos(self, query: str) -> list[dict]:
+        return await self._crm.buscar_contactos(query)
+
+    async def crear_oportunidad(self, **kwargs) -> tuple[bool, dict]:
+        return await self._crm.crear_oportunidad(**kwargs)
+
+    async def obtener_oportunidades(
+        self, estado: str | None = None, contacto_id: int | None = None
+    ) -> list[dict]:
+        return await self._crm.obtener_oportunidades(
+            estado=estado, contacto_id=contacto_id
+        )
+
+    async def actualizar_estado_oportunidad(
+        self, oportunidad_id: int, nuevo_estado: str
+    ) -> tuple[bool, dict]:
+        return await self._crm.actualizar_estado_oportunidad(
+            oportunidad_id, nuevo_estado
+        )
+
+    async def eliminar_oportunidad(self, oportunidad_id: int) -> tuple[bool, dict]:
+        return await self._crm.eliminar_oportunidad(oportunidad_id)
+
+    async def pipeline_oportunidades(self) -> dict:
+        return await self._crm.pipeline_oportunidades()
+
+    async def crear_actividad(self, **kwargs) -> tuple[bool, dict]:
+        return await self._crm.crear_actividad(**kwargs)
+
+    async def obtener_actividades(
+        self, contacto_id: int | None = None, estado: str | None = None
+    ) -> list[dict]:
+        return await self._crm.obtener_actividades(
+            contacto_id=contacto_id, estado=estado
+        )
+
+    async def completar_actividad(
+        self, actividad_id: int, resultado: str = ""
+    ) -> tuple[bool, dict]:
+        return await self._crm.completar_actividad(actividad_id, resultado=resultado)
+
+    async def crear_nota(self, **kwargs) -> tuple[bool, dict]:
+        return await self._crm.crear_nota(**kwargs)
+
+    async def obtener_notas(
+        self, contacto_id: int | None = None, oportunidad_id: int | None = None
+    ) -> list[dict]:
+        return await self._crm.obtener_notas(
+            contacto_id=contacto_id, oportunidad_id=oportunidad_id
         )

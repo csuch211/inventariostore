@@ -137,6 +137,13 @@ async def navigate_to(app, route: str) -> None:
     elif route == "cotizaciones":
         from ui.purchasing_views import show_cotizaciones
         await show_cotizaciones(app)
+    # CRM routes
+    elif route == "contactos":
+        from ui.crm_views import show_contactos
+        await show_contactos(app)
+    elif route == "pipeline":
+        from ui.crm_views import show_pipeline
+        await show_pipeline(app)
 
 
 def refresh_nav_badges_sync(app) -> None:

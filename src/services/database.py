@@ -26,6 +26,7 @@ from services.permissions import (
 from services.repository import (
     AccountingRepository,
     ConfigRepository,
+    CRMRepository,
     EmployeeRepository,
     HRRepository,
     InventoryRepository,
@@ -58,6 +59,7 @@ class DatabaseManager:
         self.employee_repo = EmployeeRepository(db_path)
         self.hr_repo = HRRepository(db_path)
         self.purchasing_repo = PurchasingRepository(db_path)
+        self.crm_repo = CRMRepository(db_path)
         self._init_database()
         logger.info(f"Database initialized at {db_path}")
 
