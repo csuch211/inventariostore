@@ -1,6 +1,6 @@
 # Plan de Mejora de Mantenibilidad — InventarioStore
 
-Estado actual: **8.5/10** — 6 fases completadas, 106 tests pasan, arquitectura modular.
+Estado actual: **9/10** — 7 fases completadas, 106 tests pasan, 0 God Classes restantes.
 
 ---
 
@@ -9,11 +9,12 @@ Estado actual: **8.5/10** — 6 fases completadas, 106 tests pasan, arquitectura
 | Fase | Estado | Tests |
 |------|--------|-------|
 | Fase 0: Limpieza inmediata | ✅ Completada | — |
-| Fase 1: Descomposición God Classes | ✅ Completada | 29 existentes pasan |
+| Fase 1: Descomposición God Classes (Backend) | ✅ Completada | 29 existentes pasan |
 | Fase 2: Patrones de código | ✅ Completada | 15 nuevos (schemas + errors) |
 | Fase 3: Tests | ✅ Completada | 32 repos + 40 controllers |
 | Fase 4: Arquitectura avanzada | ✅ Completada | EventBus + Strategy + API async |
 | Fase 5: Performance y seguridad | ✅ Completada | Rate limiter + sesiones DB |
+| Fase 6: Descomposición AppView (UI) | ✅ Completada | 1037 → 6 módulos |
 
 **Total: 106 tests, 0 fallos**
 
@@ -71,8 +72,21 @@ src/tests/
 └── test_schemas_and_errors.py → 15 tests for DTOs + error handler
 ```
 
+### Nuevos (UI View Modules)
+```
+src/ui/views/
+├── __init__.py              → exports all view functions
+├── dashboard_view.py        → show_dashboard() — KPI cards, charts, tables
+├── product_view.py          → show_products_list(), show_product_form(), etc.
+├── sidebar_builder.py       → build_sidebar_desktop(), build_sidebar_mobile()
+├── dialogs.py               → show_stock_management(), show_export_options(), etc.
+├── scanner_view.py          → show_scanner(), build_scanner_result()
+└── nav_router.py            → navigate_to(), refresh_nav_badges()
+```
+
 ### Modificados
 ```
+src/ui/app_view.py           → Thin shell: 3,623 → 1,037 líneas (71% reducción)
 src/services/database.py     → Delegates CRUD to 6 repositories
 src/core/controller.py       → Thin facade delegating to 8 controllers
 src/api/rest.py              → All endpoints now async (no asyncio.run())
