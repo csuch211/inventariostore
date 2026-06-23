@@ -9,6 +9,11 @@ Hybrid password hashing:
 Authenticate() returns session info enriched with the user's role and
 resolved permission list (RBAC), sourced from the SQLite database via
 DatabaseManager when available.
+
+JWT support:
+- create_access_token() / create_refresh_token() for API auth
+- verify_access_token() / verify_refresh_token() for token validation
+- Revoke refresh token on logout
 """
 
 import hashlib
@@ -16,7 +21,15 @@ import hmac
 import secrets
 from datetime import datetime, timedelta
 
-from config.settings import SESSION_TIMEOUT_MINUTES
+import jwt
+
+from config.settings import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    JWT_ALGORITHM,
+    JWT_SECRET_KEY,
+    REFRESH_TOKEN_EXPIRE_DAYS,
+    SESSION_TIMEOUT_MINUTES,
+)
 from utils.exceptions import AuthenticationException
 from utils.logger import setup_logger
 
@@ -187,3 +200,101 @@ class AuthService:
         if self.validate_session(token):
             return self.sessions[token].get("rol")
         return None
+
+    # ============ JWT Methods ============
+
+    def create_access_token(self, username: str, rol: str, permissions: list) -> str:
+        """Create a short-lived JWT access token."""
+        now = datetime.utcnow()
+        payload = {
+            "sub": username,
+            "rol": rol,
+            "permissions": permissions,
+            "iat": now,
+            "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+            "type": "access",
+        }
+        return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+    def create_refresh_token(self, username: str, user_id: int) -> str:
+        """Create a long-lived refresh token and store it in DB."""
+        now = datetime.utcnow()
+        jti = secrets.token_hex(16)
+        expires_at = now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+
+        # Store in database
+        if self._db:
+            try:
+                with self._db._get_connection() as conn:
+                    conn.execute(
+                        """INSERT INTO refresh_tokens (jti, user_id, username, expires_at, created_at)
+                           VALUES (?, ?, ?, ?, ?)""",
+                        (jti, user_id, username, expires_at.isoformat(), now.isoformat()),
+                    )
+                    conn.commit()
+            except Exception as e:
+                logger.error(f"Failed to store refresh token: {e}")
+                raise AuthenticationException("Failed to create refresh token")
+
+        payload = {
+            "sub": username,
+            "jti": jti,
+            "iat": now,
+            "exp": expires_at,
+            "type": "refresh",
+        }
+        return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+
+    def verify_access_token(self, token: str) -> dict | None:
+        """Verify and decode an access token. Returns payload or None."""
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            if payload.get("type") != "access":
+                return None
+            return payload
+        except jwt.ExpiredSignatureError:
+            logger.debug("Access token expired")
+            return None
+        except jwt.InvalidTokenError as e:
+            logger.debug(f"Invalid access token: {e}")
+            return None
+
+    def verify_refresh_token(self, token: str) -> dict | None:
+        """Verify a refresh token. Checks JWT validity + DB revocation."""
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            if payload.get("type") != "refresh":
+                return None
+
+            jti = payload.get("jti")
+            if not jti or not self._db:
+                return None
+
+            # Check if revoked in database
+            with self._db._get_connection() as conn:
+                row = conn.execute(
+                    "SELECT revoked FROM refresh_tokens WHERE jti = ?", (jti,)
+                ).fetchone()
+                if not row or row["revoked"]:
+                    return None
+
+            return payload
+        except jwt.ExpiredSignatureError:
+            logger.debug("Refresh token expired")
+            return None
+        except jwt.InvalidTokenError as e:
+            logger.debug(f"Invalid refresh token: {e}")
+            return None
+
+    def revoke_refresh_token(self, jti: str) -> bool:
+        """Revoke a refresh token by marking it in the database."""
+        if not self._db:
+            return False
+        try:
+            with self._db._get_connection() as conn:
+                conn.execute("UPDATE refresh_tokens SET revoked = 1 WHERE jti = ?", (jti,))
+                conn.commit()
+                return True
+        except Exception as e:
+            logger.error(f"Failed to revoke refresh token: {e}")
+            return False

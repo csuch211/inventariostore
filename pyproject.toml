@@ -15,6 +15,7 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.27",
     "httpx>=0.27",
+    "pyjwt>=2.13.0",
 ]
 
 [dependency-groups]
@@ -22,6 +23,8 @@ dev = [
     "flet-cli>=0.85.3",
     "flet-desktop>=0.85.3",
     "flet-web>=0.85.3",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.15.18",
 ]
 
@@ -53,6 +56,9 @@ ignore = ["PLR2004", "PLR0913", "PLR0915", "SIM117"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [tool.mypy]
 python_version = "3.14"

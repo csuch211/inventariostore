@@ -36,6 +36,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from api.rate_limiter import RateLimitMiddleware
+from config.settings import ACCESS_TOKEN_EXPIRE_MINUTES
 from core.controller import InventarioController
 from services.database import DatabaseManager
 from services.permissions import ALL_PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS
@@ -114,14 +115,36 @@ def build_db() -> DatabaseManager:
     return DatabaseManager()
 
 
+def _get_auth_service() -> "AuthService":
+    """Build an AuthService with DB access for JWT operations."""
+    from services.auth import AuthService as AuthServiceCls
+
+    return AuthServiceCls(db=build_db())
+
+
 def require_user(
+    authorization: str | None = Header(default=None, alias="Authorization"),
     x_user: str | None = Header(default=None, alias="X-User"),
-    x_password: str | None = Header(default=None, alias="X-Password"),
 ) -> str:
-    """Resolve the active user from basic headers. Loads permissions."""
-    if not x_user:
-        raise HTTPException(status_code=401, detail="Missing X-User header")
-    return x_user
+    """Resolve the active user from JWT Bearer token or X-User header.
+
+    Supports both JWT (for API clients) and X-User header (for legacy/GUI).
+    """
+    auth_svc = _get_auth_service()
+
+    # Try JWT Bearer token first
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+        payload = auth_svc.verify_access_token(token)
+        if not payload:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        return payload["sub"]
+
+    # Fallback to X-User header (legacy/GUI compatibility)
+    if x_user:
+        return x_user
+
+    raise HTTPException(status_code=401, detail="Missing Authorization header or X-User header")
 
 
 def _resolve_user_perms(db: DatabaseManager, username: str):
@@ -204,18 +227,97 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/auth/login")
+class LoginResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    username: str
+    rol: str
+    permissions: list[str]
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+@app.post("/auth/login", response_model=LoginResponse)
 async def login(req: LoginRequest):
-    controller = build_controller()
+    auth_svc = _get_auth_service()
     try:
-        session = await controller.login(req.username, req.password)
-        return {
-            "username": req.username,
-            "rol": session.get("rol"),
-            "permissions": sorted(session.get("permissions", [])),
-        }
+        # Authenticate and get user info
+        session = auth_svc.authenticate(req.username, req.password)
+
+        # Get user ID for refresh token
+        db = build_db()
+        user = db.obtener_usuario_por_username_full(req.username)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        # Create JWT tokens
+        access_token = auth_svc.create_access_token(
+            username=req.username,
+            rol=session["rol"],
+            permissions=session["permissions"],
+        )
+        refresh_token = auth_svc.create_refresh_token(
+            username=req.username,
+            user_id=user["id"],
+        )
+
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            username=req.username,
+            rol=session["rol"],
+            permissions=session["permissions"],
+        )
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.post("/auth/refresh")
+async def refresh_token(req: RefreshRequest):
+    """Refresh an access token using a valid refresh token."""
+    auth_svc = _get_auth_service()
+    payload = auth_svc.verify_refresh_token(req.refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    username = payload["sub"]
+    db = build_db()
+
+    # Resolve fresh permissions
+    rol, permissions = _resolve_user_perms(db, username)
+
+    # Create new access token
+    access_token = auth_svc.create_access_token(
+        username=username,
+        rol=rol,
+        permissions=list(permissions),
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES,
+    }
+
+
+@app.post("/auth/logout")
+async def logout(authorization: str | None = Header(default=None, alias="Authorization")):
+    """Revoke the refresh token on logout."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
+
+    auth_svc = _get_auth_service()
+    token = authorization[7:]
+
+    # Try to verify as refresh token and revoke it
+    payload = auth_svc.verify_refresh_token(token)
+    if payload and payload.get("jti"):
+        auth_svc.revoke_refresh_token(payload["jti"])
+
+    return {"message": "Logged out successfully"}
 
 
 @app.get("/productos", response_model=list[ProductOut])

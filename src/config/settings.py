@@ -101,6 +101,12 @@ THEME_SCROLLBAR_TRACK = "#F1F5F9"  # slate-100 — scrollbar track
 SESSION_TIMEOUT_MINUTES = 30
 PASSWORD_MIN_LENGTH = 8
 
+# JWT Configuration
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "inventariostore-dev-secret-change-in-production")
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
 # Pagination
 ITEMS_PER_PAGE = 50
 
