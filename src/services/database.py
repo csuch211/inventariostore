@@ -593,6 +593,21 @@ class DatabaseManager:
                     )
                 """)
 
+                # ============ Performance indexes ============
+                # Products
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_productos_activo ON productos(activo)")
+                # Stock history
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_historial_stock_producto ON historial_stock(producto_id)")
+                # Sales
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_ventas_creado_en ON ventas(creado_en)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_ventas_estado ON ventas(estado)")
+                # Audit
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_auditoria_creado_en ON auditoria(creado_en)")
+                # Purchase orders
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_ordenes_estado ON ordenes_compra(estado)")
+
                 conn.commit()
                 self.seed_rbac()
                 self.migrar_schema()

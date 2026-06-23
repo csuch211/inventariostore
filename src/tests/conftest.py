@@ -22,6 +22,12 @@ import pytest
 _TMP_DB_DIR = Path(tempfile.mkdtemp(prefix="inv_pytest_"))
 os.environ["DATABASE_FILE_OVERRIDE"] = str(_TMP_DB_DIR / "test.db")
 
+# Set test credentials (these are for testing only)
+os.environ["INV_ADMIN_USER"] = "admin"
+os.environ["INV_ADMIN_PASSWORD"] = "Admin123"
+os.environ["INV_OPERATOR_USER"] = "usuario"
+os.environ["INV_OPERATOR_PASSWORD"] = "Usuario123"
+
 import config.settings as _settings  # noqa: E402
 
 _settings.DATABASE_FILE = _TMP_DB_DIR / "test.db"

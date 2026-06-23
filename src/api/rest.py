@@ -117,14 +117,21 @@ class RegisterRequest(BaseModel):
 
 # ----- Dependency wiring -----
 
-
-def build_controller() -> InventarioController:
-    """Construct a controller fresh for the process. Stateless wrt users."""
-    return InventarioController()
+# Cached DatabaseManager instance (avoids re-initialization on every request)
+_db_instance: DatabaseManager | None = None
 
 
 def build_db() -> DatabaseManager:
-    return DatabaseManager()
+    """Get or create a cached DatabaseManager instance."""
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = DatabaseManager()
+    return _db_instance
+
+
+def build_controller() -> InventarioController:
+    """Construct a controller with cached DB. Stateless wrt users."""
+    return InventarioController()
 
 
 def _get_auth_service() -> "AuthService":
@@ -136,27 +143,23 @@ def _get_auth_service() -> "AuthService":
 
 def require_user(
     authorization: str | None = Header(default=None, alias="Authorization"),
-    x_user: str | None = Header(default=None, alias="X-User"),
 ) -> str:
-    """Resolve the active user from JWT Bearer token or X-User header.
+    """Resolve the active user from JWT Bearer token.
 
-    Supports both JWT (for API clients) and X-User header (for legacy/GUI).
+    All API endpoints require JWT authentication. The X-User header
+    fallback has been removed for security.
     """
     auth_svc = _get_auth_service()
 
-    # Try JWT Bearer token first
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization[7:]
-        payload = auth_svc.verify_access_token(token)
-        if not payload:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        return payload["sub"]
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
 
-    # Fallback to X-User header (legacy/GUI compatibility)
-    if x_user:
-        return x_user
+    token = authorization[7:]
+    payload = auth_svc.verify_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    raise HTTPException(status_code=401, detail="Missing Authorization header or X-User header")
+    return payload["sub"]
 
 
 def _resolve_user_perms(db: DatabaseManager, username: str):
@@ -201,11 +204,21 @@ def _resolve_user_perms(db: DatabaseManager, username: str):
 
 # ----- App -----
 
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Inventariostore REST API",
-    version="0.4.0",
+    version="0.5.0",
     description="Read-mostly REST surface over the inventory controller.",
+)
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.add_middleware(RateLimitMiddleware, max_requests=100, window_seconds=60)
@@ -236,7 +249,14 @@ def _authorized_controller(username: str) -> InventarioController:
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    """Health check that verifies database connectivity."""
+    try:
+        db = build_db()
+        with db._get_connection() as conn:
+            conn.execute("SELECT 1")
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Service unhealthy: {e}")
 
 
 class LoginResponse(BaseModel):

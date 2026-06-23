@@ -102,9 +102,21 @@ SESSION_TIMEOUT_MINUTES = 30
 PASSWORD_MIN_LENGTH = 8
 
 # JWT Configuration
-JWT_SECRET_KEY = os.getenv(
-    "JWT_SECRET_KEY", "f099b3168282f028aa4ac99527fb3c3fc4349fd14068b3c60a5313e10c587c7f"
-)
+# IMPORTANT: In production, JWT_SECRET_KEY MUST be set via environment variable.
+# If not set, a random key is generated per process (tokens won't survive restart).
+_jwt_secret = os.getenv("JWT_SECRET_KEY")
+if not _jwt_secret:
+    import secrets as _secrets
+    _jwt_secret = _secrets.token_hex(32)
+    import warnings as _warnings
+    _warnings.warn(
+        "JWT_SECRET_KEY not set! Generating random key. "
+        "Tokens will not persist across restarts. "
+        "Set JWT_SECRET_KEY environment variable for production.",
+        UserWarning,
+        stacklevel=2,
+    )
+JWT_SECRET_KEY = _jwt_secret
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -132,11 +144,14 @@ ENABLE_AUDIT_LOG = True
 ENABLE_BACKUP = True
 BACKUP_PATH = PROJECT_ROOT / "backups"
 
-# Default credentials (override via environment variables)
+# Default credentials (MUST be set via environment variables in production)
+# WARNING: Using default values is only for development. Change immediately in production.
+import secrets as _secrets
+
 DEFAULT_ADMIN_USER = os.getenv("INV_ADMIN_USER", "admin")
-DEFAULT_ADMIN_PASSWORD = os.getenv("INV_ADMIN_PASSWORD", "Admin123")
+DEFAULT_ADMIN_PASSWORD = os.getenv("INV_ADMIN_PASSWORD") or _secrets.token_urlsafe(16)
 DEFAULT_OPERATOR_USER = os.getenv("INV_OPERATOR_USER", "usuario")
-DEFAULT_OPERATOR_PASSWORD = os.getenv("INV_OPERATOR_PASSWORD", "Usuario123")
+DEFAULT_OPERATOR_PASSWORD = os.getenv("INV_OPERATOR_PASSWORD") or _secrets.token_urlsafe(16)
 
 
 def ensure_dirs() -> None:

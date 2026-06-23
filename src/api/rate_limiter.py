@@ -1,7 +1,7 @@
 """Rate limiter middleware for FastAPI.
 
 Provides a simple in-memory rate limiter based on client IP address.
-Uses a sliding window counter approach.
+Uses a sliding window counter approach with periodic cleanup.
 """
 
 from __future__ import annotations
@@ -31,12 +31,36 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self._requests: dict[str, list[float]] = defaultdict(list)
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # Cleanup every 5 minutes
+
+    def _cleanup_stale_entries(self) -> None:
+        """Remove entries for IPs that haven't sent requests recently."""
+        now = time.time()
+        if now - self._last_cleanup < self._cleanup_interval:
+            return
+
+        stale_threshold = now - (self.window_seconds * 2)
+        stale_ips = [
+            ip for ip, timestamps in self._requests.items()
+            if not timestamps or max(timestamps) < stale_threshold
+        ]
+        for ip in stale_ips:
+            del self._requests[ip]
+
+        if stale_ips:
+            logger.debug("Cleaned up %d stale rate limit entries", len(stale_ips))
+
+        self._last_cleanup = now
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
 
-        # Clean old entries outside the window
+        # Periodic cleanup of stale entries
+        self._cleanup_stale_entries()
+
+        # Clean old entries outside the window for this IP
         self._requests[client_ip] = [
             t for t in self._requests[client_ip] if now - t < self.window_seconds
         ]
