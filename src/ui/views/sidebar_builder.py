@@ -56,6 +56,12 @@ ROUTE_PERMISSIONS = {
     "p3_reportes": Perm.REPORTES_EJECUTAR,
     "p3_push": Perm.PUSH_ENVIAR,
     "p3_image_search": Perm.IMAGE_SEARCH,
+    # Facturación routes
+    "facturas": Perm.FACTURAS_LEER,
+    # Contabilidad routes
+    "asientos": Perm.CONTABILIDAD_LEER,
+    "plan_cuentas": Perm.CONTABILIDAD_PLAN_CUENTAS,
+    "balance": Perm.CONTABILIDAD_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -110,6 +116,12 @@ NAV_DATA_ALL = [
     ("p3_reportes", ft.icons.Icons.ASSESSMENT_OUTLINED, t("phase3.reportes.title"), None),
     ("p3_push", ft.icons.Icons.NOTIFICATIONS_ACTIVE, t("phase3.push.title"), None),
     ("p3_image_search", ft.icons.Icons.IMAGE_SEARCH, t("phase3.image_search.title"), None),
+    # Facturación
+    ("facturas", ft.icons.Icons.RECEIPT, "Facturas", None),
+    # Contabilidad
+    ("asientos", ft.icons.Icons.BOOK, "Asientos Contables", None),
+    ("plan_cuentas", ft.icons.Icons.ACCOUNT_TREE, "Plan de Cuentas", None),
+    ("balance", ft.icons.Icons.BALANCE, "Balance Comprobación", None),
 ]
 
 SECTIONS_DEF = [
@@ -150,6 +162,15 @@ SECTIONS_DEF = [
             "p3_reportes",
             "p3_push",
             "p3_image_search",
+        ],
+    ),
+    (
+        "sidebar.section.billing",
+        [
+            "facturas",
+            "asientos",
+            "plan_cuentas",
+            "balance",
         ],
     ),
     (

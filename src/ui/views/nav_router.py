@@ -92,6 +92,20 @@ async def navigate_to(app, route: str) -> None:
         await p3.show_push_queue(app)
     elif route == "p3_image_search":
         await p3.show_image_search(app)
+    # Facturación routes
+    elif route == "facturas":
+        from ui.invoice_views import show_facturas
+        await show_facturas(app)
+    # Contabilidad routes
+    elif route == "asientos":
+        from ui.accounting_views import show_asientos
+        await show_asientos(app)
+    elif route == "plan_cuentas":
+        from ui.accounting_views import show_plan_cuentas
+        await show_plan_cuentas(app)
+    elif route == "balance":
+        from ui.accounting_views import show_balance
+        await show_balance(app)
 
 
 def refresh_nav_badges_sync(app) -> None:
