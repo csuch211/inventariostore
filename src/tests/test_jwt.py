@@ -111,8 +111,8 @@ class TestJWTAccessTokens:
             "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
             "type": "access",
         }
-        # Sign with wrong key
-        token = jwt.encode(payload, "wrong-secret", algorithm=JWT_ALGORITHM)
+        # Sign with wrong key (must be >= 32 bytes for HS256)
+        token = jwt.encode(payload, "wrong-secret-key-that-is-long-enough-for-hmac", algorithm=JWT_ALGORITHM)
         result = auth_service.verify_access_token(token)
         assert result is None
 
