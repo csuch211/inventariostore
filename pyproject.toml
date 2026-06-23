@@ -1,0 +1,69 @@
+[project]
+name = "inventariostore"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.14"
+authors = [
+    { name = "Flet developer", email = "you@example.com" }
+]
+dependencies = [
+    "flet>=0.85.3",
+    "flet-charts>=0.85.3",
+    "reportlab>=4.0",
+    "openpyxl>=3.1",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "httpx>=0.27",
+]
+
+[dependency-groups]
+dev = [
+    "flet-cli>=0.85.3",
+    "flet-desktop>=0.85.3",
+    "flet-web>=0.85.3",
+    "ruff>=0.15.18",
+]
+
+[tool.flet]
+org = "com.pawckar"
+product = "inventariostore"
+company = "Flet"
+copyright = "Copyright (C) 2023-2026 by Flet"
+
+[tool.flet.app]
+path = "src"
+
+# ---------------------------------------------------------------------------
+# Code quality
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+exclude = ["__pycache__", ".git", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "YTT", "SIM", "PL", "RUF"]
+ignore = ["PLR2004", "PLR0913", "PLR0915", "SIM117"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR", "SIM"]
+"verify_*.py" = ["PLR", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.14"
+strict = false
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["src/tests/*", "src/main.py"]
+
+[tool.coverage.report]
+fail_under = 40
+exclude_lines = ["pragma: no cover", "def __repr__", "if __name__ == .__main__.:"]
