@@ -11,6 +11,7 @@ from collections.abc import Callable
 from core.controllers.accounting_controller import AccountingController
 from core.controllers.admin_controller import AdminController
 from core.controllers.auth_controller import AuthController
+from core.controllers.hr_controller import HRController
 from core.controllers.invoice_controller import InvoiceController
 from core.controllers.inventory_controller import InventoryController
 from core.controllers.phase1_controller import Phase1Controller
@@ -46,6 +47,7 @@ class InventarioController:
         self._invoices = InvoiceController(self.db, self.auth_service, self.export_service)
         self._accounting = AccountingController(self.db, self.auth_service, self.export_service)
         self._inventory = InventoryController(self.db, self.auth_service, self.export_service)
+        self._hr = HRController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -91,6 +93,7 @@ class InventarioController:
             self._invoices,
             self._accounting,
             self._inventory,
+            self._hr,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -1063,3 +1066,78 @@ class InventarioController:
 
     async def generar_reporte_inventario(self) -> dict:
         return await self._inventory.generar_reporte_inventario()
+
+    # ============ RRHH ============
+
+    async def crear_empleado(self, **kwargs) -> tuple[bool, dict]:
+        return await self._hr.crear_empleado(**kwargs)
+
+    async def obtener_empleado(self, empleado_id: int) -> dict | None:
+        return await self._hr.obtener_empleado(empleado_id)
+
+    async def obtener_empleados(
+        self, departamento: str | None = None, estado: str = "activo"
+    ) -> list[dict]:
+        return await self._hr.obtener_empleados(departamento=departamento, estado=estado)
+
+    async def actualizar_empleado(self, empleado_id: int, **kwargs) -> tuple[bool, dict]:
+        return await self._hr.actualizar_empleado(empleado_id, **kwargs)
+
+    async def eliminar_empleado(self, empleado_id: int) -> tuple[bool, dict]:
+        return await self._hr.eliminar_empleado(empleado_id)
+
+    async def obtener_departamentos(self) -> list[str]:
+        return await self._hr.obtener_departamentos()
+
+    async def crear_nomina(self, **kwargs) -> tuple[bool, dict]:
+        return await self._hr.crear_nomina(**kwargs)
+
+    async def obtener_nomina(
+        self, empleado_id: int | None = None, periodo: str | None = None
+    ) -> list[dict]:
+        return await self._hr.obtener_nomina(empleado_id=empleado_id, periodo=periodo)
+
+    async def aprobar_nomina(self, nomina_id: int) -> tuple[bool, dict]:
+        return await self._hr.aprobar_nomina(nomina_id)
+
+    async def registrar_asistencia(self, **kwargs) -> tuple[bool, dict]:
+        return await self._hr.registrar_asistencia(**kwargs)
+
+    async def obtener_asistencia(
+        self, empleado_id: int | None = None,
+        fecha_inicio: str | None = None, fecha_fin: str | None = None
+    ) -> list[dict]:
+        return await self._hr.obtener_asistencia(
+            empleado_id=empleado_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin
+        )
+
+    async def calcular_horas_empleado(
+        self, empleado_id: int, fecha_inicio: str, fecha_fin: str
+    ) -> dict:
+        return await self._hr.calcular_horas_empleado(empleado_id, fecha_inicio, fecha_fin)
+
+    async def solicitar_vacaciones(self, **kwargs) -> tuple[bool, dict]:
+        return await self._hr.solicitar_vacaciones(**kwargs)
+
+    async def obtener_vacaciones(
+        self, empleado_id: int | None = None, estado: str | None = None
+    ) -> list[dict]:
+        return await self._hr.obtener_vacaciones(empleado_id=empleado_id, estado=estado)
+
+    async def aprobar_vacaciones(self, vacacion_id: int) -> tuple[bool, dict]:
+        return await self._hr.aprobar_vacaciones(vacacion_id)
+
+    async def rechazar_vacaciones(self, vacacion_id: int) -> tuple[bool, dict]:
+        return await self._hr.rechazar_vacaciones(vacacion_id)
+
+    async def dias_vacaciones_disponibles(self, empleado_id: int) -> int:
+        return await self._hr.dias_vacaciones_disponibles(empleado_id)
+
+    async def crear_evaluacion(self, **kwargs) -> tuple[bool, dict]:
+        return await self._hr.crear_evaluacion(**kwargs)
+
+    async def obtener_evaluaciones(self, empleado_id: int | None = None) -> list[dict]:
+        return await self._hr.obtener_evaluaciones(empleado_id=empleado_id)
+
+    async def promedio_evaluaciones(self, empleado_id: int) -> float:
+        return await self._hr.promedio_evaluaciones(empleado_id)

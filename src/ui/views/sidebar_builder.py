@@ -71,6 +71,8 @@ ROUTE_PERMISSIONS = {
     "inventory_turnover": Perm.STOCK_LEER,
     "inventory_aging": Perm.STOCK_LEER,
     "stockout_risk": Perm.STOCK_LEER,
+    # RRHH
+    "empleados": Perm.USUARIOS_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -140,6 +142,8 @@ NAV_DATA_ALL = [
     ("inventory_turnover", ft.icons.Icons.REFRESH, "Rotación Inventario", None),
     ("inventory_aging", ft.icons.Icons.HOURGLASS_EMPTY, "Envejecimiento", None),
     ("stockout_risk", ft.icons.Icons.WARNING, "Riesgo Agotamiento", None),
+    # RRHH
+    ("empleados", ft.icons.Icons.PEOPLE, "Empleados", None),
 ]
 
 SECTIONS_DEF = [
@@ -201,6 +205,12 @@ SECTIONS_DEF = [
             "inventory_turnover",
             "inventory_aging",
             "stockout_risk",
+        ],
+    ),
+    (
+        "sidebar.section.hr",
+        [
+            "empleados",
         ],
     ),
     (

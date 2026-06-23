@@ -129,6 +129,10 @@ async def navigate_to(app, route: str) -> None:
     elif route == "stockout_risk":
         from ui.inventory_analysis_views import show_stockout_risk
         await show_stockout_risk(app)
+    # RRHH routes
+    elif route == "empleados":
+        from ui.hr_views import show_empleados
+        await show_empleados(app)
 
 
 def refresh_nav_badges_sync(app) -> None:
