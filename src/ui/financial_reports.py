@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import flet as ft
 
 from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from services.financial_report_export import FinancialReportExporter
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
 from utils.logger import setup_logger
@@ -101,11 +102,33 @@ async def show_financial_dashboard(app):
         if app.main_view:
             app.main_view.content = ft.Column([
                 AppHeader.create("Dashboard Financiero", "Resumen ejecutivo"),
+                ft.Container(
+                    content=ft.Row([
+                        ft.Button(
+                            content=ft.Row([
+                                ft.Icon(ft.icons.Icons.PICTURE_AS_PDF, color="white"),
+                                ft.Text("Exportar PDF", color="white"),
+                            ], spacing=5),
+                            on_click=lambda e: asyncio.create_task(export_pdf()),
+                            style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
+                        ),
+                    ], alignment=ft.MainAxisAlignment.END),
+                    padding=20,
+                ),
                 ft.Container(content=cards_row1, padding=20),
                 ft.Container(content=cards_row2, padding=ft.Padding(left=20, right=20, top=0, bottom=10)),
                 ft.Container(content=cards_row3, padding=ft.Padding(left=20, right=20, top=0, bottom=20)),
             ], expand=True, scroll=ft.ScrollMode.AUTO)
             app.page.update()
+
+    async def export_pdf():
+        try:
+            balance = await controller.obtener_balance_comprobacion()
+            exporter = FinancialReportExporter()
+            path = exporter.export_dashboard_financiero(balance)
+            SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
+        except Exception as ex:
+            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
 
     await refresh()
 
@@ -192,9 +215,31 @@ async def show_estado_resultados(app):
         if app.main_view:
             app.main_view.content = ft.Column([
                 AppHeader.create("Estado de Resultados", "P&L Statement"),
+                ft.Container(
+                    content=ft.Row([
+                        ft.Button(
+                            content=ft.Row([
+                                ft.Icon(ft.icons.Icons.PICTURE_AS_PDF, color="white"),
+                                ft.Text("Exportar PDF", color="white"),
+                            ], spacing=5),
+                            on_click=lambda e: asyncio.create_task(export_pdf()),
+                            style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
+                        ),
+                    ], alignment=ft.MainAxisAlignment.END),
+                    padding=20,
+                ),
                 ft.Container(content=content, padding=20),
             ], expand=True, scroll=ft.ScrollMode.AUTO)
             app.page.update()
+
+    async def export_pdf():
+        try:
+            balance = await controller.obtener_balance_comprobacion()
+            exporter = FinancialReportExporter()
+            path = exporter.export_estado_resultados(balance)
+            SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
+        except Exception as ex:
+            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
 
     await refresh()
 
@@ -264,8 +309,30 @@ async def show_balance_general(app):
         if app.main_view:
             app.main_view.content = ft.Column([
                 AppHeader.create("Balance General", "Balance sheet"),
+                ft.Container(
+                    content=ft.Row([
+                        ft.Button(
+                            content=ft.Row([
+                                ft.Icon(ft.icons.Icons.PICTURE_AS_PDF, color="white"),
+                                ft.Text("Exportar PDF", color="white"),
+                            ], spacing=5),
+                            on_click=lambda e: asyncio.create_task(export_pdf()),
+                            style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
+                        ),
+                    ], alignment=ft.MainAxisAlignment.END),
+                    padding=20,
+                ),
                 ft.Container(content=content, padding=20),
             ], expand=True, scroll=ft.ScrollMode.AUTO)
             app.page.update()
+
+    async def export_pdf():
+        try:
+            balance = await controller.obtener_balance_comprobacion()
+            exporter = FinancialReportExporter()
+            path = exporter.export_balance_general(balance)
+            SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
+        except Exception as ex:
+            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
 
     await refresh()
