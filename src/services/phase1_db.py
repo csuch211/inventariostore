@@ -1108,7 +1108,6 @@ def buscar_productos_avanzado(
     texto: str | None = None,
     categoria: str | None = None,
     proveedor_id: int | None = None,
-    estado: str = "activo",
     precio_min: float | None = None,
     precio_max: float | None = None,
     stock_min: int | None = None,
@@ -1120,8 +1119,8 @@ def buscar_productos_avanzado(
     """Combined filter search on the product catalog. All filters are AND'd.
     `orden` accepts: nombre, precio, cantidad, creado_en, actualizado_en.
     """
-    where = ["p.estado = ?"]
-    params: list = [estado]
+    where = ["p.activo = 1"]
+    params: list = []
     if texto:
         like = f"%{texto}%"
         where.append("(p.codigo LIKE ? OR p.nombre LIKE ? OR p.descripcion LIKE ? OR p.sku LIKE ?)")
@@ -1268,14 +1267,14 @@ def obtener_kpis_dashboard(db) -> dict:
                        COALESCE(SUM(cantidad), 0) AS unidades_totales,
                        COALESCE(SUM(cantidad * precio), 0) AS valor_inventario_venta,
                        COALESCE(SUM(cantidad * COALESCE(precio_costo, 0)), 0) AS valor_inventario_costo
-                   FROM productos WHERE estado = 'activo'"""
+                   FROM productos WHERE activo = 1"""
             ).fetchone()
             criticos = conn.execute(
                 """SELECT COUNT(*) AS c FROM productos
-                   WHERE estado = 'activo' AND cantidad <= COALESCE(stock_min, 0)"""
+                   WHERE activo = 1 AND cantidad <= COALESCE(stock_min, 0)"""
             ).fetchone()["c"]
             agotados = conn.execute(
-                "SELECT COUNT(*) AS c FROM productos WHERE estado = 'activo' AND cantidad = 0"
+                "SELECT COUNT(*) AS c FROM productos WHERE activo = 1 AND cantidad = 0"
             ).fetchone()["c"]
             ventas_hoy = conn.execute(
                 """SELECT COUNT(*) AS c, COALESCE(SUM(total), 0) AS total

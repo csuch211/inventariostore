@@ -83,7 +83,7 @@ class TestProductRepository:
         created = product_repo.crear_producto(codigo="TST-007", nombre="Delete Me")
         product_repo.eliminar_producto(created["id"], usuario="tester")
         fetched = product_repo.obtener_producto_por_id(created["id"])
-        assert fetched is None or fetched.get("estado") == "inactivo"
+        assert fetched is None or fetched.get("activo") == 0
 
     def test_buscar_productos(self, product_repo):
         product_repo.crear_producto(codigo="TST-008", nombre="Searchable Item")

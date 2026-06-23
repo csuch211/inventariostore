@@ -91,7 +91,7 @@ class DatabaseManager:
                         precio REAL DEFAULT 0.0,
                         descripcion TEXT,
                         categoria TEXT,
-                        estado TEXT DEFAULT 'activo',
+                        activo INTEGER DEFAULT 1,
                         creado_en TEXT NOT NULL,
                         actualizado_en TEXT NOT NULL,
                         creado_por TEXT,

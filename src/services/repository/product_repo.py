@@ -81,8 +81,7 @@ class ProductRepository(BaseRepository):
                     """SELECT p.*, pr.nombre as proveedor_nombre
                        FROM productos p
                        LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
-                       WHERE p.estado = ? ORDER BY p.creado_en DESC""",
-                    (estado,),
+                       WHERE p.activo = 1 ORDER BY p.creado_en DESC""",
                 )
                 return [dict(row) for row in cursor.fetchall()]
         except sqlite3.Error as e:
@@ -270,7 +269,7 @@ class ProductRepository(BaseRepository):
             now = datetime.now().isoformat()
             with self._get_connection() as conn:
                 conn.execute(
-                    "UPDATE productos SET estado = 'inactivo', actualizado_en = ?, actualizado_por = ? WHERE id = ?",
+                    "UPDATE productos SET activo = 0, actualizado_en = ?, actualizado_por = ? WHERE id = ?",
                     (now, usuario, producto_id),
                 )
                 conn.commit()
@@ -292,7 +291,7 @@ class ProductRepository(BaseRepository):
                     SELECT p.*, pr.nombre as proveedor_nombre
                     FROM productos p
                     LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
-                    WHERE p.estado = 'activo' AND (p.codigo LIKE ? OR p.nombre LIKE ?)
+                    WHERE p.activo = 1 AND (p.codigo LIKE ? OR p.nombre LIKE ?)
                     ORDER BY p.creado_en DESC
                     """,
                     (search_term, search_term),
@@ -419,7 +418,7 @@ class ProductRepository(BaseRepository):
                 cursor = conn.execute(
                     f"""SELECT {select_cols}
                         FROM {table}
-                        WHERE {prefix}estado = 'activo' AND (
+                        WHERE {prefix}activo = 1 AND (
                             {prefix}cantidad = 0
                             OR ({prefix}stock_min > 0 AND {prefix}cantidad <= {prefix}stock_min)
                             OR ({prefix}stock_min = 0 AND {prefix}cantidad <= ?)
@@ -478,7 +477,7 @@ class ProductRepository(BaseRepository):
                         SUM(cantidad) as cantidad_total,
                         SUM(cantidad * precio) as valor_total
                     FROM productos
-                    WHERE estado = 'activo'
+                    WHERE activo = 1
                 """)
                 row = cursor.fetchone()
                 return dict(row) if row else {}
@@ -709,7 +708,7 @@ class ProductRepository(BaseRepository):
                     """SELECT COALESCE(c.nombre, 'Sin categoría') as nombre,
                               COUNT(p.id) as total
                        FROM categorias c
-                       LEFT JOIN productos p ON p.categoria = c.nombre AND p.estado = 'activo'
+                       LEFT JOIN productos p ON p.categoria = c.nombre AND p.activo = 1
                        WHERE c.activo = 1 OR c.id IS NULL
                        GROUP BY c.nombre
                        ORDER BY total DESC"""
@@ -723,7 +722,7 @@ class ProductRepository(BaseRepository):
             with self._get_connection() as conn:
                 cursor = conn.execute(
                     """SELECT nombre, cantidad FROM productos
-                       WHERE estado = 'activo'
+                       WHERE activo = 1
                        ORDER BY cantidad DESC LIMIT ?""",
                     (limit,),
                 )
@@ -740,7 +739,7 @@ class ProductRepository(BaseRepository):
                               SUM(hs.cantidad_nueva * p.precio) as valor_dia
                        FROM historial_stock hs
                        JOIN productos p ON hs.producto_id = p.id
-                       WHERE p.estado = 'activo'
+                       WHERE p.activo = 1
                        GROUP BY fecha ORDER BY fecha"""
                 )
                 per_day = {row["fecha"]: float(row["valor_dia"]) for row in cursor.fetchall()}
@@ -764,7 +763,7 @@ class ProductRepository(BaseRepository):
             with self._get_connection() as conn:
                 placeholders = ",".join("?" for _ in ids)
                 conn.execute(
-                    f"UPDATE productos SET estado = 'inactivo', actualizado_en = ?, actualizado_por = ? WHERE id IN ({placeholders})",
+                    f"UPDATE productos SET activo = 0, actualizado_en = ?, actualizado_por = ? WHERE id IN ({placeholders})",
                     [now, usuario, *ids],
                 )
                 for pid in ids:

@@ -105,7 +105,7 @@ class InventoryRepository(BaseRepository):
                     SELECT ia.*, p.nombre as producto_nombre, p.codigo as producto_codigo, p.precio
                     FROM inventario_almacen ia
                     JOIN productos p ON ia.producto_id = p.id
-                    WHERE ia.almacen_id = ? AND p.estado = 'activo'
+                    WHERE ia.almacen_id = ? AND p.activo = 1
                     ORDER BY p.nombre
                 """,
                     (almacen_id,),
@@ -149,7 +149,7 @@ class InventoryRepository(BaseRepository):
                     FROM inventario_almacen ia
                     JOIN productos p ON ia.producto_id = p.id
                     JOIN almacenes a ON ia.almacen_id = a.id
-                    WHERE p.estado = 'activo' AND a.activo = 1
+                    WHERE p.activo = 1 AND a.activo = 1
                     ORDER BY a.nombre, p.nombre
                 """)
                 return [dict(r) for r in cursor.fetchall()]

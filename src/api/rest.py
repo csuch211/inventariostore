@@ -56,7 +56,7 @@ class ProductOut(BaseModel):
     precio: float
     categoria: str | None = None
     stock_min: int = 0
-    estado: str = "activo"
+    activo: int = 1
     creado_en: str | None = None
 
 
@@ -239,7 +239,7 @@ async def list_productos(
             precio=p["precio"],
             categoria=p.get("categoria"),
             stock_min=p.get("stock_min", 0),
-            estado=p.get("estado", "activo"),
+            activo=p.get("activo", 1),
             creado_en=p.get("creado_en"),
         )
         for p in (res or [])[:limit]
