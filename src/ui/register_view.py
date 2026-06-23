@@ -215,19 +215,11 @@ async def show_register_form(app):
             )
             result = await register(req)
 
-            success_text.value = "✓ Registro exitoso. Revisa tu email para verificar tu cuenta."
             SnackBarHelper.success(app.page, "Cuenta creada exitosamente")
 
-            # Clear form
-            nombre_field.value = ""
-            email_field.value = ""
-            username_field.value = ""
-            password_field.value = ""
-            confirm_field.value = ""
-            strength_bar.value = 0
-            strength_text.value = ""
-
-            app.page.update()
+            # Redirect to email verification screen
+            from ui.verify_email_view import show_verify_email
+            await show_verify_email(app, username=username, email=email)
 
         except Exception as ex:
             error_text.value = f"Error: {ex}"
