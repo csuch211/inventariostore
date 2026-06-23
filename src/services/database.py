@@ -27,6 +27,7 @@ from services.repository import (
     AccountingRepository,
     ConfigRepository,
     CRMRepository,
+    DocumentRepository,
     EmployeeRepository,
     HRRepository,
     InventoryRepository,
@@ -60,6 +61,7 @@ class DatabaseManager:
         self.hr_repo = HRRepository(db_path)
         self.purchasing_repo = PurchasingRepository(db_path)
         self.crm_repo = CRMRepository(db_path)
+        self.document_repo = DocumentRepository(db_path)
         self._init_database()
         logger.info(f"Database initialized at {db_path}")
 

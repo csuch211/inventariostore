@@ -144,6 +144,10 @@ async def navigate_to(app, route: str) -> None:
     elif route == "pipeline":
         from ui.crm_views import show_pipeline
         await show_pipeline(app)
+    # Documentos routes
+    elif route == "documentos":
+        from ui.document_views import show_documentos
+        await show_documentos(app)
 
 
 def refresh_nav_badges_sync(app) -> None:

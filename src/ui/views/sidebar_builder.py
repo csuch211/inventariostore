@@ -78,6 +78,8 @@ ROUTE_PERMISSIONS = {
     # CRM
     "contactos": Perm.CLIENTES_LEER,
     "pipeline": Perm.CLIENTES_LEER,
+    # Documentos
+    "documentos": Perm.USUARIOS_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -154,6 +156,8 @@ NAV_DATA_ALL = [
     # CRM
     ("contactos", ft.icons.Icons.CONTACTS, "Contactos CRM", None),
     ("pipeline", ft.icons.Icons.PIPELINE, "Pipeline Ventas", None),
+    # Documentos
+    ("documentos", ft.icons.Icons.FOLDER_COPY, "Documentos", None),
 ]
 
 SECTIONS_DEF = [
@@ -234,6 +238,12 @@ SECTIONS_DEF = [
         [
             "contactos",
             "pipeline",
+        ],
+    ),
+    (
+        "sidebar.section.documents",
+        [
+            "documentos",
         ],
     ),
     (

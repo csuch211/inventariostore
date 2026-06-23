@@ -12,6 +12,7 @@ from core.controllers.accounting_controller import AccountingController
 from core.controllers.admin_controller import AdminController
 from core.controllers.auth_controller import AuthController
 from core.controllers.crm_controller import CRMController
+from core.controllers.document_controller import DocumentController
 from core.controllers.hr_controller import HRController
 from core.controllers.invoice_controller import InvoiceController
 from core.controllers.inventory_controller import InventoryController
@@ -52,6 +53,7 @@ class InventarioController:
         self._hr = HRController(self.db, self.auth_service, self.export_service)
         self._purchasing = PurchasingController(self.db, self.auth_service, self.export_service)
         self._crm = CRMController(self.db, self.auth_service, self.export_service)
+        self._documents = DocumentController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -100,6 +102,7 @@ class InventarioController:
             self._hr,
             self._purchasing,
             self._crm,
+            self._documents,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -1288,3 +1291,58 @@ class InventarioController:
         return await self._crm.obtener_notas(
             contacto_id=contacto_id, oportunidad_id=oportunidad_id
         )
+
+    # ============ Gestión Documental ============
+
+    async def crear_documento(self, **kwargs) -> tuple[bool, dict]:
+        return await self._documents.crear_documento(**kwargs)
+
+    async def obtener_documento(self, documento_id: int) -> dict | None:
+        return await self._documents.obtener_documento(documento_id)
+
+    async def obtener_documentos(
+        self,
+        categoria_id: int | None = None,
+        tipo: str | None = None,
+        estado: str | None = None,
+        autor: str | None = None,
+    ) -> list[dict]:
+        return await self._documents.obtener_documentos(
+            categoria_id=categoria_id, tipo=tipo, estado=estado, autor=autor
+        )
+
+    async def actualizar_documento(self, documento_id: int, **kwargs) -> tuple[bool, dict]:
+        return await self._documents.actualizar_documento(documento_id, **kwargs)
+
+    async def eliminar_documento(self, documento_id: int) -> tuple[bool, dict]:
+        return await self._documents.eliminar_documento(documento_id)
+
+    async def buscar_documentos(self, query: str) -> list[dict]:
+        return await self._documents.buscar_documentos(query)
+
+    async def crear_version(self, **kwargs) -> tuple[bool, dict]:
+        return await self._documents.crear_version(**kwargs)
+
+    async def obtener_versiones(self, documento_id: int) -> list[dict]:
+        return await self._documents.obtener_versiones(documento_id)
+
+    async def agregar_tag(self, documento_id: int, tag: str) -> tuple[bool, dict]:
+        return await self._documents.agregar_tag(documento_id, tag)
+
+    async def eliminar_tag(self, documento_id: int, tag: str) -> tuple[bool, dict]:
+        return await self._documents.eliminar_tag(documento_id, tag)
+
+    async def buscar_por_tag(self, tag: str) -> list[dict]:
+        return await self._documents.buscar_por_tag(tag)
+
+    async def obtener_tags_populares(self, limit: int = 20) -> list[dict]:
+        return await self._documents.obtener_tags_populares(limit=limit)
+
+    async def crear_categoria_documento(self, **kwargs) -> tuple[bool, dict]:
+        return await self._documents.crear_categoria_documento(**kwargs)
+
+    async def obtener_categorias_documento(self) -> list[dict]:
+        return await self._documents.obtener_categorias_documento()
+
+    async def eliminar_categoria_documento(self, categoria_id: int) -> tuple[bool, dict]:
+        return await self._documents.eliminar_categoria_documento(categoria_id)
