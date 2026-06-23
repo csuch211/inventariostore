@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,9 @@ from config.settings import ACCESS_TOKEN_EXPIRE_MINUTES
 from core.controller import InventarioController
 from services.database import DatabaseManager
 from services.permissions import ALL_PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS
+from utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 # ----- Pydantic schemas -----
 
@@ -467,6 +471,107 @@ async def forgot_password(req: ForgotPasswordRequest):
                 )
 
     return response
+
+
+# ----- SMTP Configuration -----
+
+
+class SMTPConfigIn(BaseModel):
+    host: str = Field(min_length=1, max_length=200)
+    port: int = Field(ge=1, le=65535, default=587)
+    user: str = Field(min_length=1, max_length=200)
+    password: str = Field(min_length=1, max_length=200)
+    from_email: str = Field(min_length=1, max_length=200)
+    enabled: bool = False
+
+
+@app.get("/smtp/config")
+async def get_smtp_config_endpoint(user: str = Depends(require_user)):
+    """Get current SMTP configuration (password masked)."""
+    db = build_db()
+    from services.notifier import get_smtp_config
+
+    cfg = get_smtp_config(db)
+    return {
+        "host": cfg.get("host", ""),
+        "port": int(cfg.get("port", 587)),
+        "user": cfg.get("user", ""),
+        "password": "***" if cfg.get("password") else "",
+        "from_email": cfg.get("from_email", ""),
+        "to_email": cfg.get("to_email", ""),
+        "enabled": cfg.get("enabled", "no") == "si",
+    }
+
+
+@app.post("/smtp/config")
+async def save_smtp_config(req: SMTPConfigIn, user: str = Depends(require_user)):
+    """Save SMTP configuration."""
+    db = build_db()
+    try:
+        db.guardar_config("smtp_host", req.host)
+        db.guardar_config("smtp_port", str(req.port))
+        db.guardar_config("smtp_user", req.user)
+        db.guardar_config("smtp_password", req.password)
+        db.guardar_config("smtp_from_email", req.from_email)
+        db.guardar_config("smtp_to_email", req.from_email)  # Default to from_email
+        db.guardar_config("notify_low_stock", "si" if req.enabled else "no")
+
+        logger.info(f"SMTP config updated by {user}")
+
+        return {"message": "SMTP configuration saved successfully"}
+    except Exception as e:
+        logger.error(f"Failed to save SMTP config: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save SMTP configuration")
+
+
+@app.post("/smtp/test")
+async def test_smtp_connection(user: str = Depends(require_user)):
+    """Test SMTP connection without sending an email."""
+    db = build_db()
+    from services.notifier import get_smtp_config, is_configured
+
+    cfg = get_smtp_config(db)
+    if not is_configured(cfg):
+        raise HTTPException(status_code=400, detail="SMTP not fully configured")
+
+    try:
+        import smtplib
+        import ssl
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP(cfg["host"], int(cfg["port"]), timeout=10) as server:
+            server.starttls(context=context)
+            server.login(cfg["user"], cfg["password"])
+
+        return {"message": "SMTP connection successful", "host": cfg["host"], "port": cfg["port"]}
+    except smtplib.SMTPAuthenticationError:
+        raise HTTPException(status_code=400, detail="SMTP authentication failed - check username/password")
+    except smtplib.SMTPConnectError:
+        raise HTTPException(status_code=400, detail="Cannot connect to SMTP server - check host/port")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"SMTP connection failed: {str(e)}")
+
+
+@app.post("/smtp/send-test")
+async def send_test_email(user: str = Depends(require_user)):
+    """Send a test email to verify SMTP configuration."""
+    db = build_db()
+    from services.notifier import send_custom_alert
+
+    result = send_custom_alert(
+        db,
+        subject="Test Email - InventarioStore",
+        body=f"Hello!\n\n"
+             f"This is a test email from InventarioStore.\n\n"
+             f"If you received this, your SMTP configuration is working correctly.\n\n"
+             f"Sent at: {datetime.utcnow().isoformat()}\n\n"
+             f"-- InventarioStore",
+    )
+
+    if result.get("sent"):
+        return {"message": "Test email sent successfully", "to": result.get("to")}
+    else:
+        raise HTTPException(status_code=500, detail=f"Failed to send test email: {result.get('reason')}")
 
 
 @app.post("/auth/reset-password")

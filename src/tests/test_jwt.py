@@ -463,3 +463,37 @@ class TestEmailVerification:
         req = ForgotPasswordRequest(username="admin")
         result = asyncio.run(resend_verification(req))
         assert "message" in result
+
+
+class TestSMTPConfig:
+    def test_get_smtp_config(self, ctrl):
+        """Test getting SMTP configuration."""
+        from api.rest import get_smtp_config_endpoint
+        import asyncio
+
+        result = asyncio.run(get_smtp_config_endpoint(user="admin"))
+        assert "host" in result
+        assert "port" in result
+        assert "enabled" in result
+
+    def test_save_smtp_config(self, ctrl):
+        """Test saving SMTP configuration."""
+        from api.rest import save_smtp_config, SMTPConfigIn
+        import asyncio
+
+        req = SMTPConfigIn(
+            host="smtp.gmail.com",
+            port=587,
+            user="test@gmail.com",
+            password="testpass",
+            from_email="test@gmail.com",
+            enabled=True,
+        )
+        result = asyncio.run(save_smtp_config(req, user="admin"))
+        assert "message" in result
+
+        # Verify config was saved
+        from api.rest import get_smtp_config_endpoint
+        config = asyncio.run(get_smtp_config_endpoint(user="admin"))
+        assert config["host"] == "smtp.gmail.com"
+        assert config["enabled"] is True
