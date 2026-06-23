@@ -5,7 +5,7 @@ Enhanced database management with connection pooling and error handling
 import contextlib
 import sqlite3
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from config.settings import (
@@ -15,7 +15,6 @@ from config.settings import (
     DEFAULT_OPERATOR_PASSWORD,
     DEFAULT_OPERATOR_USER,
     ENABLE_AUDIT_LOG,
-    STOCK_LOW_DEFAULT,
 )
 from services.auth import _LEGACY_SALT, _hash_with_salt
 from services.migrator import upgrade as run_migrations
@@ -31,7 +30,7 @@ from services.repository import (
     SaleRepository,
     UserRepository,
 )
-from utils.exceptions import DatabaseException, DuplicateProductException
+from utils.exceptions import DatabaseException
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)

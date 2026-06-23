@@ -11,7 +11,6 @@ from core.schemas import (
     UserData,
     AlmacenData,
     TransferenciaData,
-    DevolucionData,
     LoteData,
     VarianteData,
     PlantillaReporteData,

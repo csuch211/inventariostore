@@ -9,7 +9,6 @@ from __future__ import annotations
 import csv
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime
 from pathlib import Path
 
 from utils.logger import setup_logger
@@ -71,9 +70,7 @@ class PDFExport(ExportStrategy):
         try:
             from reportlab.lib import colors
             from reportlab.lib.pagesizes import landscape, letter
-            from reportlab.lib.styles import getSampleStyleSheet
-            from reportlab.lib.units import inch
-            from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
         except ImportError:
             raise ImportError("reportlab is required for PDF export")
 
@@ -90,7 +87,6 @@ class PDFExport(ExportStrategy):
             bottomMargin=30,
         )
 
-        styles = getSampleStyleSheet()
         elements = []
 
         headers = list(data[0].keys())

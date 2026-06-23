@@ -19,7 +19,6 @@ from core.controllers.warehouse_controller import WarehouseController
 from services.auth import AuthService
 from services.database import DatabaseManager
 from services.export import ExportService
-from services.permissions import require_permission
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)

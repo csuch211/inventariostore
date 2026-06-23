@@ -6,14 +6,12 @@ and export functionality using async/await patterns.
 
 import asyncio
 import contextlib
-from typing import Any
 
 import flet as ft
 
 from config.settings import (
     APP_NAME,
     APP_VERSION,
-    ITEMS_PER_PAGE,
     STOCK_LOW_DEFAULT,
     STOCK_MONITOR_INTERVAL_SECONDS,
     THEME_ACCENT_COLOR,
@@ -51,8 +49,6 @@ from config.settings import (
     THEME_PRIMARY_TINT,
     THEME_SHADOW,
     THEME_SIDEBAR_BG,
-    THEME_SUCCESS_COLOR,
-    THEME_SUCCESS_LIGHT,
     THEME_SURFACE_COLOR,
     THEME_TABLE_HEADING,
     THEME_TABLE_ROW,
@@ -61,25 +57,14 @@ from config.settings import (
     THEME_TEXT_PRIMARY,
     THEME_TEXT_SECONDARY,
     THEME_WARNING_COLOR,
-    THEME_WARNING_LIGHT,
 )
 from core.controller import InventarioController
 from core.theme_manager import theme_manager
 from services.permissions import Perm
 from services.stock_monitor import StockMonitor
-from ui import admin_views, entity_views, sales_views, stock_views
-from ui import phase1_views as p1
-from ui import phase3_views as p3
 from ui.components import (
-    AppHeader,
-    DialogHelper,
     FormField,
-    LangSwitcher,
     LoadingSpinner,
-    SidebarItem,
-    SidebarSearch,
-    SidebarSection,
-    SidebarUserCard,
     SnackBarHelper,
     bind_page,
 )

@@ -7,11 +7,6 @@ audit logging, and error conditions using an isolated SQLite DB.
 from __future__ import annotations
 
 import pytest
-from services.repository.product_repo import ProductRepository
-from services.repository.user_repo import UserRepository
-from services.repository.sale_repo import SaleRepository
-from services.repository.inventory_repo import InventoryRepository
-from services.repository.config_repo import ConfigRepository
 
 
 @pytest.fixture

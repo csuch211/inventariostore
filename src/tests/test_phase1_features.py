@@ -14,8 +14,6 @@ import os
 import shutil
 import sys
 import tempfile
-import traceback
-from datetime import date, timedelta
 from pathlib import Path
 
 # Set up an isolated DB before importing the app modules
@@ -37,7 +35,7 @@ if _settings.DATABASE_FILE.exists():
     _settings.DATABASE_FILE.unlink()
 
 from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS, PermissionException  # noqa: E402
+from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
 
 PASS = "✔"
 FAIL = "✘"

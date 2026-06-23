@@ -204,7 +204,7 @@ class TestPhase3Controller:
 class TestInventarioControllerFacade:
     @pytest.mark.asyncio
     async def test_login_sets_permissions(self, ctrl):
-        result = await ctrl.login("admin", "Admin123")
+        await ctrl.login("admin", "Admin123")
         assert ctrl.current_user == "admin"
         assert len(ctrl.current_user_permissions) > 0
 
