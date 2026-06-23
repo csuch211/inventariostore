@@ -445,6 +445,16 @@ class AppView:
                     error_text,
                     ft.Container(height=5),
                     login_btn,
+                    ft.TextButton(
+                        content=ft.Text(
+                            "¿No tienes cuenta? Regístrate",
+                            color=C["primary"],
+                            size=12,
+                        ),
+                        on_click=lambda e: asyncio.create_task(
+                            self._show_register_form()
+                        ),
+                    ),
                 ],
                 spacing=12,
                 width=card_width,
@@ -479,6 +489,11 @@ class AppView:
         self._ensure_file_pickers_in_overlay()
         self.page.add(login_container)
         logger.info("login screen rendered")
+
+    async def _show_register_form(self):
+        """Display user registration form."""
+        from ui.register_view import show_register_form
+        await show_register_form(self)
 
     # ============ Main View ============
 
