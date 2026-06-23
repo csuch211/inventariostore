@@ -24,8 +24,10 @@ from services.permissions import (
     ROLE_DESCRIPTIONS,
 )
 from services.repository import (
+    AccountingRepository,
     ConfigRepository,
     InventoryRepository,
+    InvoiceRepository,
     ProductRepository,
     SaleRepository,
     UserRepository,
@@ -48,6 +50,8 @@ class DatabaseManager:
         self.sale_repo = SaleRepository(db_path)
         self.inventory_repo = InventoryRepository(db_path)
         self.config_repo = ConfigRepository(db_path)
+        self.invoice_repo = InvoiceRepository(db_path)
+        self.accounting_repo = AccountingRepository(db_path)
         self._init_database()
         logger.info(f"Database initialized at {db_path}")
 

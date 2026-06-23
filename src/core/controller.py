@@ -1,15 +1,17 @@
 """
 Thin facade that delegates to domain controllers.
 
-InventarioController instantiates eight domain controllers and forwards every
+InventarioController instantiates ten domain controllers and forwards every
 call.  ``current_user`` / ``current_user_permissions`` are propagated to all
 children whenever they change (see ``_sync_children``).
 """
 
 from collections.abc import Callable
 
+from core.controllers.accounting_controller import AccountingController
 from core.controllers.admin_controller import AdminController
 from core.controllers.auth_controller import AuthController
+from core.controllers.invoice_controller import InvoiceController
 from core.controllers.phase1_controller import Phase1Controller
 from core.controllers.phase3_controller import Phase3Controller
 from core.controllers.product_controller import ProductController
@@ -40,6 +42,8 @@ class InventarioController:
         self._admin = AdminController(self.db, self.auth_service, self.export_service)
         self._phase1 = Phase1Controller(self.db, self.auth_service, self.export_service)
         self._phase3 = Phase3Controller(self.db, self.auth_service, self.export_service)
+        self._invoices = InvoiceController(self.db, self.auth_service, self.export_service)
+        self._accounting = AccountingController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -82,6 +86,8 @@ class InventarioController:
             self._admin,
             self._phase1,
             self._phase3,
+            self._invoices,
+            self._accounting,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -959,3 +965,78 @@ class InventarioController:
             extractor=extractor,
             top_k=top_k,
         )
+
+    # ============ Facturación ============
+
+    async def crear_factura(
+        self,
+        cliente_id: int,
+        items: list[dict],
+        tipo: str = "factura",
+        descuento_total: float = 0,
+        notas: str = "",
+        venta_id: int | None = None,
+    ) -> tuple[bool, dict]:
+        return await self._invoices.crear_factura(
+            cliente_id=cliente_id,
+            items=items,
+            tipo=tipo,
+            descuento_total=descuento_total,
+            notas=notas,
+            venta_id=venta_id,
+        )
+
+    async def obtener_factura(self, factura_id: int) -> dict | None:
+        return await self._invoices.obtener_factura(factura_id)
+
+    async def obtener_facturas(
+        self, estado: str | None = None, cliente_id: int | None = None
+    ) -> list[dict]:
+        return await self._invoices.obtener_facturas(estado=estado, cliente_id=cliente_id)
+
+    async def cancelar_factura(self, factura_id: int) -> tuple[bool, dict]:
+        return await self._invoices.cancelar_factura(factura_id)
+
+    async def crear_factura_desde_venta(self, venta_id: int) -> tuple[bool, dict]:
+        return await self._invoices.crear_factura_desde_venta(venta_id)
+
+    # ============ Contabilidad ============
+
+    async def crear_asiento(
+        self,
+        fecha: str,
+        descripcion: str,
+        tipo: str,
+        movimientos: list[dict],
+        referencia_id: int | None = None,
+        referencia_tipo: str | None = None,
+    ) -> tuple[bool, dict]:
+        return await self._accounting.crear_asiento(
+            fecha=fecha,
+            descripcion=descripcion,
+            tipo=tipo,
+            movimientos=movimientos,
+            referencia_id=referencia_id,
+            referencia_tipo=referencia_tipo,
+        )
+
+    async def obtener_asiento(self, asiento_id: int) -> dict | None:
+        return await self._accounting.obtener_asiento(asiento_id)
+
+    async def obtener_asientos(
+        self, fecha_inicio: str | None = None, fecha_fin: str | None = None
+    ) -> list[dict]:
+        return await self._accounting.obtener_asientos(fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
+
+    async def obtener_plan_cuentas(self, tipo: str | None = None) -> list[dict]:
+        return await self._accounting.obtener_plan_cuentas(tipo=tipo)
+
+    async def obtener_balance_comprobacion(
+        self, fecha_inicio: str | None = None, fecha_fin: str | None = None
+    ) -> list[dict]:
+        return await self._accounting.obtener_balance_comprobacion(
+            fecha_inicio=fecha_inicio, fecha_fin=fecha_fin
+        )
+
+    async def crear_asiento_venta(self, venta_id: int) -> tuple[bool, dict]:
+        return await self._accounting.crear_asiento_venta(venta_id)

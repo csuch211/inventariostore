@@ -130,6 +130,20 @@ class Perm:
     PUSH_ENVIAR = "push.enviar"
     PUSH_CONFIGURAR = "push.configurar"
 
+    # Facturación
+    FACTURAS_LEER = "facturas.leer"
+    FACTURAS_CREAR = "facturas.crear"
+    FACTURAS_CANCELAR = "facturas.cancelar"
+
+    # Cuentas por cobrar
+    CUENTAS_COBRAR_LEER = "cuentas_cobrar.leer"
+    CUENTAS_COBRAR_GESTIONAR = "cuentas_cobrar.gestionar"
+
+    # Contabilidad
+    CONTABILIDAD_LEER = "contabilidad.leer"
+    CONTABILIDAD_ASIENTOS = "contabilidad.asientos"
+    CONTABILIDAD_PLAN_CUENTAS = "contabilidad.plan_cuentas"
+
 
 # All permissions grouped by module for display in the UI
 PERMISSIONS_BY_MODULE: dict[str, list[dict[str, str]]] = {
@@ -247,6 +261,20 @@ PERMISSIONS_BY_MODULE: dict[str, list[dict[str, str]]] = {
     "push": [
         {"clave": Perm.PUSH_ENVIAR, "descripcion": "Encolar/enviar notificaciones push"},
         {"clave": Perm.PUSH_CONFIGURAR, "descripcion": "Configurar SMTP y destinos de push"},
+    ],
+    "facturas": [
+        {"clave": Perm.FACTURAS_LEER, "descripcion": "Ver facturas"},
+        {"clave": Perm.FACTURAS_CREAR, "descripcion": "Crear facturas"},
+        {"clave": Perm.FACTURAS_CANCELAR, "descripcion": "Cancelar facturas"},
+    ],
+    "cuentas_cobrar": [
+        {"clave": Perm.CUENTAS_COBRAR_LEER, "descripcion": "Ver cuentas por cobrar"},
+        {"clave": Perm.CUENTAS_COBRAR_GESTIONAR, "descripcion": "Gestionar cuentas por cobrar"},
+    ],
+    "contabilidad": [
+        {"clave": Perm.CONTABILIDAD_LEER, "descripcion": "Ver asientos y balances"},
+        {"clave": Perm.CONTABILIDAD_ASIENTOS, "descripcion": "Crear asientos contables"},
+        {"clave": Perm.CONTABILIDAD_PLAN_CUENTAS, "descripcion": "Gestionar plan de cuentas"},
     ],
 }
 
