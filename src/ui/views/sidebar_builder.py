@@ -73,6 +73,8 @@ ROUTE_PERMISSIONS = {
     "stockout_risk": Perm.STOCK_LEER,
     # RRHH
     "empleados": Perm.USUARIOS_LEER,
+    # Compras
+    "cotizaciones": Perm.ORDENES_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -144,6 +146,8 @@ NAV_DATA_ALL = [
     ("stockout_risk", ft.icons.Icons.WARNING, "Riesgo Agotamiento", None),
     # RRHH
     ("empleados", ft.icons.Icons.PEOPLE, "Empleados", None),
+    # Compras
+    ("cotizaciones", ft.icons.Icons.DESCRIPTION, "Cotizaciones", None),
 ]
 
 SECTIONS_DEF = [
@@ -211,6 +215,12 @@ SECTIONS_DEF = [
         "sidebar.section.hr",
         [
             "empleados",
+        ],
+    ),
+    (
+        "sidebar.section.purchasing",
+        [
+            "cotizaciones",
         ],
     ),
     (

@@ -133,6 +133,10 @@ async def navigate_to(app, route: str) -> None:
     elif route == "empleados":
         from ui.hr_views import show_empleados
         await show_empleados(app)
+    # Compras routes
+    elif route == "cotizaciones":
+        from ui.purchasing_views import show_cotizaciones
+        await show_cotizaciones(app)
 
 
 def refresh_nav_badges_sync(app) -> None:

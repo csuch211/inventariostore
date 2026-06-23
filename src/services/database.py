@@ -31,6 +31,7 @@ from services.repository import (
     InventoryRepository,
     InvoiceRepository,
     ProductRepository,
+    PurchasingRepository,
     SaleRepository,
     UserRepository,
 )
@@ -56,6 +57,7 @@ class DatabaseManager:
         self.accounting_repo = AccountingRepository(db_path)
         self.employee_repo = EmployeeRepository(db_path)
         self.hr_repo = HRRepository(db_path)
+        self.purchasing_repo = PurchasingRepository(db_path)
         self._init_database()
         logger.info(f"Database initialized at {db_path}")
 

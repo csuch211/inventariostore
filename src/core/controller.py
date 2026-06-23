@@ -14,6 +14,7 @@ from core.controllers.auth_controller import AuthController
 from core.controllers.hr_controller import HRController
 from core.controllers.invoice_controller import InvoiceController
 from core.controllers.inventory_controller import InventoryController
+from core.controllers.purchasing_controller import PurchasingController
 from core.controllers.phase1_controller import Phase1Controller
 from core.controllers.phase3_controller import Phase3Controller
 from core.controllers.product_controller import ProductController
@@ -48,6 +49,7 @@ class InventarioController:
         self._accounting = AccountingController(self.db, self.auth_service, self.export_service)
         self._inventory = InventoryController(self.db, self.auth_service, self.export_service)
         self._hr = HRController(self.db, self.auth_service, self.export_service)
+        self._purchasing = PurchasingController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -94,6 +96,7 @@ class InventarioController:
             self._accounting,
             self._inventory,
             self._hr,
+            self._purchasing,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -1141,3 +1144,74 @@ class InventarioController:
 
     async def promedio_evaluaciones(self, empleado_id: int) -> float:
         return await self._hr.promedio_evaluaciones(empleado_id)
+
+    # ============ Compras ============
+
+    async def crear_cotizacion(
+        self,
+        proveedor_id: int,
+        items: list[dict],
+        fecha_validez: str = "",
+        notas: str = "",
+    ) -> tuple[bool, dict]:
+        return await self._purchasing.crear_cotizacion(
+            proveedor_id=proveedor_id,
+            items=items,
+            fecha_validez=fecha_validez,
+            notas=notas,
+        )
+
+    async def obtener_cotizacion(self, cotizacion_id: int) -> dict | None:
+        return await self._purchasing.obtener_cotizacion(cotizacion_id)
+
+    async def obtener_cotizaciones(
+        self, proveedor_id: int | None = None, estado: str | None = None
+    ) -> list[dict]:
+        return await self._purchasing.obtener_cotizaciones(
+            proveedor_id=proveedor_id, estado=estado
+        )
+
+    async def aprobar_cotizacion(self, cotizacion_id: int) -> tuple[bool, dict]:
+        return await self._purchasing.aprobar_cotizacion(cotizacion_id)
+
+    async def rechazar_cotizacion(self, cotizacion_id: int) -> tuple[bool, dict]:
+        return await self._purchasing.rechazar_cotizacion(cotizacion_id)
+
+    async def convertir_a_orden(self, cotizacion_id: int) -> tuple[bool, dict]:
+        return await self._purchasing.convertir_a_orden(cotizacion_id)
+
+    async def crear_evaluacion_proveedor(self, **kwargs) -> tuple[bool, dict]:
+        return await self._purchasing.crear_evaluacion_proveedor(**kwargs)
+
+    async def obtener_evaluaciones_proveedor(
+        self, proveedor_id: int | None = None
+    ) -> list[dict]:
+        return await self._purchasing.obtener_evaluaciones_proveedor(
+            proveedor_id=proveedor_id
+        )
+
+    async def promedio_evaluacion_proveedor(self, proveedor_id: int) -> dict:
+        return await self._purchasing.promedio_evaluacion_proveedor(proveedor_id)
+
+    async def crear_recepcion(
+        self,
+        proveedor_id: int,
+        items: list[dict],
+        orden_compra_id: int | None = None,
+        calidad: str = "aceptada",
+        notas: str = "",
+    ) -> tuple[bool, dict]:
+        return await self._purchasing.crear_recepcion(
+            proveedor_id=proveedor_id,
+            items=items,
+            orden_compra_id=orden_compra_id,
+            calidad=calidad,
+            notas=notas,
+        )
+
+    async def obtener_recepciones(
+        self, proveedor_id: int | None = None
+    ) -> list[dict]:
+        return await self._purchasing.obtener_recepciones(
+            proveedor_id=proveedor_id
+        )
