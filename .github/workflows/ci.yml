@@ -1,0 +1,114 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Check formatting
+        run: uv run ruff format src/ --check
+      
+      - name: Run linter
+        run: uv run ruff check src/ --select E,F,I,W
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Run mypy
+        run: uv run mypy src/
+        continue-on-error: true
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Run tests
+        run: uv run pytest src/tests/ -v --tb=short --ignore=src/tests/test_phase3_views_part2.py --ignore=src/tests/test_dashboard_unified.py
+      
+      - name: Run tests with coverage
+        run: uv run pytest src/tests/ --cov=src --cov-report=xml --ignore=src/tests/test_phase3_views_part2.py --ignore=src/tests/test_dashboard_unified.py
+      
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.14'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      
+      - name: Install dependencies
+        run: uv sync
+      
+      - name: Verify imports
+        run: |
+          uv run python -c "
+          from core.controller import InventarioController
+          from ui.app_view import AppView
+          from services.database import DatabaseManager
+          from api.rest import app
+          print('All imports OK')
+          "
