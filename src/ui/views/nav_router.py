@@ -3,8 +3,8 @@
 import asyncio
 
 from ui import admin_views, entity_views, sales_views, stock_views
-from ui import phase1_views as p1
-from ui import phase3_views as p3
+from ui import inventory_operations as p1
+from ui import advanced_features as p3
 
 
 async def refresh_nav_badges(app) -> None:

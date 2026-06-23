@@ -1,8 +1,8 @@
 """
 Notifications and image search views — push queue and image search.
 
-Full implementation with push notification queue management
-and image-based product search.
+Extracted from phase3_views_part2.py during AppView decomposition.
+Re-exported by ui/advanced_features.py.
 """
 
 import asyncio

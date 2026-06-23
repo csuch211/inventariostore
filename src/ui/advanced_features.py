@@ -2,8 +2,8 @@
 Phase 3 UI views — entry point.
 
 Re-exports the per-feature view functions split across:
-  - phase3_views_part1.py : variantes, reportes
-  - phase3_views_part2.py : push queue, image search
+  - product_reports_views.py      : variantes, reportes
+  - notifications_image_views.py   : push queue, image search
 
 The i18n language picker view was removed; the sidebar `LangSwitcher`
 component (ui/components.py) is the single entry point for changing language.
@@ -15,11 +15,11 @@ Adding a new view means:
   4) Add nav_data_all entry with an icon and label.
 """
 
-from .phase3_views_part1 import (
+from .product_reports_views import (
     show_reportes,
     show_variantes,
 )
-from .phase3_views_part2 import (
+from .notifications_image_views import (
     show_image_search,
     show_push_queue,
 )

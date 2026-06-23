@@ -173,50 +173,106 @@ class PieChart:
 
         surface = (colors or {}).get("surface", "white")
         shadow = (colors or {}).get("shadow", "rgba(0,0,0,0.05)")
-        text_secondary = (colors or {}).get("text_secondary", "gray700")
         text_primary = (colors or {}).get("text_primary", "black")
+        text_muted = (colors or {}).get("text_muted", "gray500")
 
         total = sum(int(d.get("total", 0)) for d in data) or 1
         sections = []
         legend_rows = []
-        for idx, item in enumerate(data):
+
+        # Sort data by value descending for better visualization
+        sorted_data = sorted(
+            data, key=lambda x: int(x.get("total", 0)), reverse=True
+        )
+
+        for idx, item in enumerate(sorted_data):
             value = int(item.get("total", 0))
             pct = (value / total) * 100
             color = _color_for(idx)
+
+            # Show percentage on chart for larger segments
+            show_label = pct >= 8
             sections.append(
                 _PieChartSection(
                     value=value,
                     color=color,
-                    radius=80,
-                    title=f"{pct:.0f}%" if pct >= 5 else None,
-                    title_style=ft.TextStyle(size=11, color="white", weight=ft.FontWeight.BOLD),
+                    radius=85,
+                    title=f"{pct:.1f}%" if show_label else None,
+                    title_style=ft.TextStyle(
+                        size=12, color="white", weight=ft.FontWeight.BOLD
+                    ),
                 )
             )
+
+            # Enhanced legend with percentage and value
             legend_rows.append(
                 ft.Row(
                     [
-                        ft.Container(width=12, height=12, bgcolor=color, border_radius=2),
-                        ft.Text(
-                            f"{_truncate(item.get('nombre', ''), 14)}: {value}",
-                            size=11,
-                            color=text_secondary,
+                        ft.Container(
+                            width=16,
+                            height=16,
+                            bgcolor=color,
+                            border_radius=3,
+                        ),
+                        ft.Column(
+                            [
+                                ft.Text(
+                                    _truncate(item.get("nombre", ""), 18),
+                                    size=12,
+                                    weight=ft.FontWeight.W_500,
+                                    color=text_primary,
+                                ),
+                                ft.Text(
+                                    f"{value} ({pct:.1f}%)",
+                                    size=11,
+                                    color=text_muted,
+                                ),
+                            ],
+                            spacing=2,
+                            tight=True,
                         ),
                     ],
-                    spacing=5,
+                    spacing=8,
+                    alignment=ft.MainAxisAlignment.START,
                 )
             )
 
         chart = _PieChart(
             sections=sections,
             height=CHART_HEIGHT,
-            sections_space=2,
-            center_space_radius=30,
+            sections_space=1,
+            center_space_radius=40,
+        )
+
+        # Total display in center of donut
+        center_text = ft.Column(
+            [
+                ft.Text(
+                    f"{total}",
+                    size=18,
+                    weight=ft.FontWeight.BOLD,
+                    color=text_primary,
+                ),
+                ft.Text(
+                    "Total",
+                    size=10,
+                    color=text_muted,
+                ),
+            ],
+            spacing=0,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
         body: list[ft.Control] = [
             ft.Row(
-                [chart, ft.Column(legend_rows, spacing=4, tight=True)],
-                spacing=15,
+                [
+                    ft.Container(
+                        content=ft.Stack([chart, center_text]),
+                        width=CHART_HEIGHT,
+                    ),
+                    ft.Column(legend_rows, spacing=2, tight=True),
+                ],
+                spacing=20,
                 alignment=ft.MainAxisAlignment.CENTER,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             )
@@ -224,14 +280,14 @@ class PieChart:
         if title:
             body.insert(
                 0,
-                ft.Text(title, size=14, weight=ft.FontWeight.BOLD, color=text_primary),
+                ft.Text(title, size=15, weight=ft.FontWeight.BOLD, color=text_primary),
             )
         return ft.Container(
-            content=ft.Column(body, spacing=10, tight=True),
-            padding=15,
+            content=ft.Column(body, spacing=12, tight=True),
+            padding=16,
             bgcolor=surface,
-            border_radius=10,
-            shadow=ft.BoxShadow(spread_radius=1, blur_radius=3, color=shadow),
+            border_radius=12,
+            shadow=ft.BoxShadow(spread_radius=1, blur_radius=4, color=shadow),
         )
 
 

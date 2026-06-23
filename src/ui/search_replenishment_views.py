@@ -1,8 +1,8 @@
 """
-Phase 1 views — part 3: búsqueda avanzada, reabastecimiento.
+Phase 1 views — search and replenishment: advanced search, auto-restock.
 
-Companion to phase1_views_part1.py and phase1_views_part2.py.
-Re-exported by ui/phase1_views.py.
+Companion to inventory_operations_views.py and pricing_inventory_views.py.
+Re-exported by ui/inventory_operations.py.
 """
 
 from __future__ import annotations

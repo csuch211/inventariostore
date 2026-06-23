@@ -1,7 +1,7 @@
 """
-Phase 1 views — part 2a: lots, prices, taxes, cash, search.
+Phase 1 views — pricing and inventory: lots, prices, taxes, cash.
 
-Companion to phase1_views_part1.py. Re-exported by ui/phase1_views.py.
+Companion to inventory_operations_views.py. Re-exported by ui/inventory_operations.py.
 """
 
 from __future__ import annotations

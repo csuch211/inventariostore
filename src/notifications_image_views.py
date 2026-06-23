@@ -371,31 +371,6 @@ async def show_image_search(view) -> None:
         resultados.controls = new_controls
         page.update()
 
-    # Acquire (and re-parent if needed) the shared FilePicker so the user
-    # can pick an image from disk. Single instance per process.
-    picker = _ensure_image_search_picker(page)
-
-    def on_pick(ev: ft.FilePickerResultEvent):
-        if ev.files and len(ev.files) > 0:
-            ruta_field.value = ev.files[0].path
-            page.update()
-
-    picker.on_result = on_pick
-
-    async def pick_file(e):
-        picker.pick_files(allow_multiple=False)
-
-    pick_btn = ft.Button(
-        content=ft.Row(
-            [
-                ft.Icon(ft.icons.Icons.UPLOAD_FILE, color="white"),
-                ft.Text(t("phase3.image_search.pick"), color="white"),
-            ],
-            spacing=5,
-        ),
-        on_click=pick_file,
-        style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
-    )
     search_btn = ft.Button(
         content=ft.Text(t("phase3.image_search.search")),
         on_click=do_search,
@@ -421,7 +396,7 @@ async def show_image_search(view) -> None:
                     content=ft.Column(
                         [
                             ft.Row([ruta_field, top_k_field], spacing=10),
-                            ft.Row([pick_btn, search_btn], spacing=10),
+                            search_btn,
                             note,
                         ],
                         spacing=10,
