@@ -12,6 +12,7 @@ from core.controllers.accounting_controller import AccountingController
 from core.controllers.admin_controller import AdminController
 from core.controllers.auth_controller import AuthController
 from core.controllers.invoice_controller import InvoiceController
+from core.controllers.inventory_controller import InventoryController
 from core.controllers.phase1_controller import Phase1Controller
 from core.controllers.phase3_controller import Phase3Controller
 from core.controllers.product_controller import ProductController
@@ -44,6 +45,7 @@ class InventarioController:
         self._phase3 = Phase3Controller(self.db, self.auth_service, self.export_service)
         self._invoices = InvoiceController(self.db, self.auth_service, self.export_service)
         self._accounting = AccountingController(self.db, self.auth_service, self.export_service)
+        self._inventory = InventoryController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -88,6 +90,7 @@ class InventarioController:
             self._phase3,
             self._invoices,
             self._accounting,
+            self._inventory,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -1040,3 +1043,23 @@ class InventarioController:
 
     async def crear_asiento_venta(self, venta_id: int) -> tuple[bool, dict]:
         return await self._accounting.crear_asiento_venta(venta_id)
+
+    # ============ Inventario ============
+
+    async def analisis_abc(self) -> list[dict]:
+        return await self._inventory.analisis_abc()
+
+    async def calcular_rotacion(self, dias: int = 30) -> dict:
+        return await self._inventory.calcular_rotacion(dias=dias)
+
+    async def analisis_envejecimiento(self) -> list[dict]:
+        return await self._inventory.analisis_envejecimiento()
+
+    async def riesgo_agotamiento(self) -> list[dict]:
+        return await self._inventory.riesgo_agotamiento()
+
+    async def valor_inventario(self, metodo: str = "promedio") -> dict:
+        return await self._inventory.valor_inventario(metodo=metodo)
+
+    async def generar_reporte_inventario(self) -> dict:
+        return await self._inventory.generar_reporte_inventario()

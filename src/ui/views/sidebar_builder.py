@@ -66,6 +66,11 @@ ROUTE_PERMISSIONS = {
     "financial_dashboard": Perm.CONTABILIDAD_LEER,
     "estado_resultados": Perm.CONTABILIDAD_LEER,
     "balance_general": Perm.CONTABILIDAD_LEER,
+    # Análisis de inventario
+    "abc_analysis": Perm.STOCK_LEER,
+    "inventory_turnover": Perm.STOCK_LEER,
+    "inventory_aging": Perm.STOCK_LEER,
+    "stockout_risk": Perm.STOCK_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -130,6 +135,11 @@ NAV_DATA_ALL = [
     ("financial_dashboard", ft.icons.Icons.ANALYTICS, "Dashboard Financiero", None),
     ("estado_resultados", ft.icons.Icons.ASSESSMENT, "Estado de Resultados", None),
     ("balance_general", ft.icons.Icons.BALANCE, "Balance General", None),
+    # Análisis de Inventario
+    ("abc_analysis", ft.icons.Icons.PIE_CHART, "Análisis ABC", None),
+    ("inventory_turnover", ft.icons.Icons.REFRESH, "Rotación Inventario", None),
+    ("inventory_aging", ft.icons.Icons.HOURGLASS_EMPTY, "Envejecimiento", None),
+    ("stockout_risk", ft.icons.Icons.WARNING, "Riesgo Agotamiento", None),
 ]
 
 SECTIONS_DEF = [
@@ -182,6 +192,15 @@ SECTIONS_DEF = [
             "financial_dashboard",
             "estado_resultados",
             "balance_general",
+        ],
+    ),
+    (
+        "sidebar.section.inventory_analysis",
+        [
+            "abc_analysis",
+            "inventory_turnover",
+            "inventory_aging",
+            "stockout_risk",
         ],
     ),
     (

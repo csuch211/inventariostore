@@ -116,6 +116,19 @@ async def navigate_to(app, route: str) -> None:
     elif route == "balance_general":
         from ui.financial_reports import show_balance_general
         await show_balance_general(app)
+    # Análisis de inventario
+    elif route == "abc_analysis":
+        from ui.inventory_analysis_views import show_abc_analysis
+        await show_abc_analysis(app)
+    elif route == "inventory_turnover":
+        from ui.inventory_analysis_views import show_inventory_turnover
+        await show_inventory_turnover(app)
+    elif route == "inventory_aging":
+        from ui.inventory_analysis_views import show_inventory_aging
+        await show_inventory_aging(app)
+    elif route == "stockout_risk":
+        from ui.inventory_analysis_views import show_stockout_risk
+        await show_stockout_risk(app)
 
 
 def refresh_nav_badges_sync(app) -> None:
