@@ -563,6 +563,14 @@ async def show_settings(app):
                         ft.ListTile(
                             title=ft.Text(t("notifications.title")),
                             subtitle=ft.Text(t("notifications.subtitle")),
+                            trailing=ft.IconButton(
+                                icon=ft.icons.Icons.EMAIL,
+                                icon_color=THEME_PRIMARY_COLOR,
+                                tooltip="Configurar SMTP",
+                                on_click=lambda e: asyncio.create_task(
+                                    app._navigate_to("smtp_config")
+                                ),
+                            ),
                         ),
                         ft.Container(
                             content=ft.Column(

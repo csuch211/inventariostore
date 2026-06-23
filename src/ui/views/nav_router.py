@@ -58,6 +58,9 @@ async def navigate_to(app, route: str) -> None:
         await admin_views.show_users(app)
     elif route == "settings":
         await admin_views.show_settings(app)
+    elif route == "smtp_config":
+        from ui.smtp_config_view import show_smtp_config
+        await show_smtp_config(app)
     elif route == "logout":
         await app._logout()
     # Fase 1 routes
