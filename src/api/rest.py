@@ -564,7 +564,7 @@ async def send_test_email(user: str = Depends(require_user)):
         body=f"Hello!\n\n"
              f"This is a test email from InventarioStore.\n\n"
              f"If you received this, your SMTP configuration is working correctly.\n\n"
-             f"Sent at: {datetime.utcnow().isoformat()}\n\n"
+             f"Sent at: {datetime.now(datetime.UTC).isoformat()}\n\n"
              f"-- InventarioStore",
     )
 

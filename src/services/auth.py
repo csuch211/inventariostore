@@ -19,7 +19,7 @@ JWT support:
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import jwt
 
@@ -205,7 +205,7 @@ class AuthService:
 
     def create_access_token(self, username: str, rol: str, permissions: list) -> str:
         """Create a short-lived JWT access token."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payload = {
             "sub": username,
             "rol": rol,
@@ -218,7 +218,7 @@ class AuthService:
 
     def create_refresh_token(self, username: str, user_id: int) -> str:
         """Create a long-lived refresh token and store it in DB."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         jti = secrets.token_hex(16)
         expires_at = now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
@@ -316,7 +316,7 @@ class AuthService:
         # Hash the token for storage (never store raw tokens)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires_at = now + timedelta(hours=1)  # Token expires in 1 hour
 
         try:
@@ -362,7 +362,7 @@ class AuthService:
 
                 # Check expiry
                 expires_at = datetime.fromisoformat(row["expires_at"])
-                if datetime.utcnow() > expires_at:
+                if datetime.now(timezone.utc) > expires_at:
                     logger.debug("Password reset token expired")
                     return None
 
@@ -394,7 +394,7 @@ class AuthService:
                 # Update the password
                 conn.execute(
                     "UPDATE usuarios SET password_hash = ?, actualizado_en = ? WHERE id = ?",
-                    (password_hash, datetime.utcnow().isoformat(), token_info["user_id"]),
+                    (password_hash, datetime.now(timezone.utc).isoformat(), token_info["user_id"]),
                 )
                 # Mark the token as used
                 conn.execute(
@@ -421,7 +421,7 @@ class AuthService:
         # Hash the token for storage
         token_hash = hashlib.sha256(token.encode()).hexdigest()
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expires_at = now + timedelta(hours=24)  # Token expires in 24 hours
 
         try:
@@ -467,7 +467,7 @@ class AuthService:
 
                 # Check expiry
                 expires_at = datetime.fromisoformat(row["expires_at"])
-                if datetime.utcnow() > expires_at:
+                if datetime.now(timezone.utc) > expires_at:
                     logger.debug("Email verification token expired")
                     return None
 
@@ -501,7 +501,7 @@ class AuthService:
                 # Activate the user account
                 conn.execute(
                     "UPDATE usuarios SET activo = 1, actualizado_en = ? WHERE id = ?",
-                    (datetime.utcnow().isoformat(), token_info["user_id"]),
+                    (datetime.now(timezone.utc).isoformat(), token_info["user_id"]),
                 )
                 # Mark the token as used
                 conn.execute(

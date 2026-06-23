@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 from services.auth import AuthService
 from config.settings import (
@@ -70,7 +70,7 @@ class TestJWTAccessTokens:
         # Create a token with expired time
         import jwt
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payload = {
             "sub": "admin",
             "rol": "admin",
@@ -87,7 +87,7 @@ class TestJWTAccessTokens:
         # Create a refresh token and try to verify as access
         import jwt
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payload = {
             "sub": "admin",
             "jti": "test123",
@@ -102,7 +102,7 @@ class TestJWTAccessTokens:
     def test_verify_access_token_invalid_signature(self, auth_service):
         import jwt
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payload = {
             "sub": "admin",
             "rol": "admin",
@@ -147,7 +147,7 @@ class TestJWTRefreshTokens:
     def test_verify_refresh_token_expired(self, auth_service):
         import jwt
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payload = {
             "sub": "admin",
             "jti": "expired-token",
