@@ -14,6 +14,7 @@ from core.controllers.auth_controller import AuthController
 from core.controllers.crm_controller import CRMController
 from core.controllers.document_controller import DocumentController
 from core.controllers.hr_controller import HRController
+from core.controllers.notification_controller import NotificationController
 from core.controllers.invoice_controller import InvoiceController
 from core.controllers.inventory_controller import InventoryController
 from core.controllers.purchasing_controller import PurchasingController
@@ -54,6 +55,7 @@ class InventarioController:
         self._purchasing = PurchasingController(self.db, self.auth_service, self.export_service)
         self._crm = CRMController(self.db, self.auth_service, self.export_service)
         self._documents = DocumentController(self.db, self.auth_service, self.export_service)
+        self._notifications = NotificationController(self.db, self.auth_service, self.export_service)
 
         self._current_user = None
         self._current_user_role = None
@@ -103,6 +105,7 @@ class InventarioController:
             self._purchasing,
             self._crm,
             self._documents,
+            self._notifications,
         ]:
             ctrl.current_user = self._current_user
             ctrl.current_user_role = self._current_user_role
@@ -1346,3 +1349,49 @@ class InventarioController:
 
     async def eliminar_categoria_documento(self, categoria_id: int) -> tuple[bool, dict]:
         return await self._documents.eliminar_categoria_documento(categoria_id)
+
+    # ============ Notificaciones ============
+
+    async def crear_plantilla_notificacion(self, **kwargs) -> tuple[bool, dict]:
+        return await self._notifications.crear_plantilla(**kwargs)
+
+    async def obtener_plantillas_notificacion(self, tipo: str | None = None) -> list[dict]:
+        return await self._notifications.obtener_plantillas(tipo=tipo)
+
+    async def eliminar_plantilla_notificacion(self, plantilla_id: int) -> tuple[bool, dict]:
+        return await self._notifications.eliminar_plantilla(plantilla_id)
+
+    async def crear_canal_notificacion(self, **kwargs) -> tuple[bool, dict]:
+        return await self._notifications.crear_canal(**kwargs)
+
+    async def obtener_canales_notificacion(self) -> list[dict]:
+        return await self._notifications.obtener_canales()
+
+    async def crear_notificacion(self, **kwargs) -> tuple[bool, dict]:
+        return await self._notifications.crear_notificacion(**kwargs)
+
+    async def obtener_notificaciones(
+        self, destinatario: str | None = None, tipo: str | None = None,
+        estado: str | None = None, limit: int = 50
+    ) -> list[dict]:
+        return await self._notifications.obtener_notificaciones(
+            destinatario=destinatario, tipo=tipo, estado=estado, limit=limit
+        )
+
+    async def marcar_leido(self, notificacion_id: int) -> tuple[bool, dict]:
+        return await self._notifications.marcar_leido(notificacion_id)
+
+    async def marcar_todas_leidas(self, destinatario: str | None = None) -> tuple[bool, dict]:
+        return await self._notifications.marcar_todas_leidas(destinatario)
+
+    async def contar_no_leidas(self, destinatario: str | None = None) -> int:
+        return await self._notifications.contar_no_leidas(destinatario)
+
+    async def eliminar_notificacion(self, notificacion_id: int) -> tuple[bool, dict]:
+        return await self._notifications.eliminar_notificacion(notificacion_id)
+
+    async def obtener_preferencias_notificacion(self, usuario_id: int) -> dict:
+        return await self._notifications.obtener_preferencias(usuario_id)
+
+    async def guardar_preferencias_notificacion(self, usuario_id: int, preferencias: dict) -> tuple[bool, dict]:
+        return await self._notifications.guardar_preferencias(usuario_id, preferencias)

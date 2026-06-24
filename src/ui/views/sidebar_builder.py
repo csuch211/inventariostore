@@ -80,6 +80,9 @@ ROUTE_PERMISSIONS = {
     "pipeline": Perm.CLIENTES_LEER,
     # Documentos
     "documentos": Perm.USUARIOS_LEER,
+    # Notificaciones
+    "notificaciones": Perm.NOTIFICACIONES_CONFIGURAR,
+    "plantillas_notificacion": Perm.NOTIFICACIONES_CONFIGURAR,
 }
 
 NAV_DATA_ALL = [
@@ -158,6 +161,9 @@ NAV_DATA_ALL = [
     ("pipeline", ft.icons.Icons.PIPELINE, "Pipeline Ventas", None),
     # Documentos
     ("documentos", ft.icons.Icons.FOLDER_COPY, "Documentos", None),
+    # Notificaciones
+    ("notificaciones", ft.icons.Icons.NOTIFICATIONS, "Notificaciones", None),
+    ("plantillas_notificacion", ft.icons.Icons.EMAIL_TEMPLATES, "Plantillas Email", None),
 ]
 
 SECTIONS_DEF = [
@@ -244,6 +250,13 @@ SECTIONS_DEF = [
         "sidebar.section.documents",
         [
             "documentos",
+        ],
+    ),
+    (
+        "sidebar.section.notifications",
+        [
+            "notificaciones",
+            "plantillas_notificacion",
         ],
     ),
     (

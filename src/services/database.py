@@ -32,6 +32,7 @@ from services.repository import (
     HRRepository,
     InventoryRepository,
     InvoiceRepository,
+    NotificationRepository,
     ProductRepository,
     PurchasingRepository,
     SaleRepository,
@@ -62,6 +63,7 @@ class DatabaseManager:
         self.purchasing_repo = PurchasingRepository(db_path)
         self.crm_repo = CRMRepository(db_path)
         self.document_repo = DocumentRepository(db_path)
+        self.notification_repo = NotificationRepository(db_path)
         self._init_database()
         logger.info(f"Database initialized at {db_path}")
 

@@ -14,6 +14,7 @@ from services.repository.employee_repo import EmployeeRepository
 from services.repository.hr_repo import HRRepository
 from services.repository.inventory_repo import InventoryRepository
 from services.repository.invoice_repo import InvoiceRepository
+from services.repository.notification_repo import NotificationRepository
 from services.repository.product_repo import ProductRepository
 from services.repository.purchasing_repo import PurchasingRepository
 from services.repository.sale_repo import SaleRepository
@@ -29,6 +30,7 @@ __all__ = [
     "HRRepository",
     "InventoryRepository",
     "InvoiceRepository",
+    "NotificationRepository",
     "ProductRepository",
     "PurchasingRepository",
     "SaleRepository",

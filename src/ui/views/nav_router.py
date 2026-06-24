@@ -148,6 +148,13 @@ async def navigate_to(app, route: str) -> None:
     elif route == "documentos":
         from ui.document_views import show_documentos
         await show_documentos(app)
+    # Notificaciones routes
+    elif route == "notificaciones":
+        from ui.notification_views import show_notificaciones
+        await show_notificaciones(app)
+    elif route == "plantillas_notificacion":
+        from ui.notification_views import show_plantillas_notificacion
+        await show_plantillas_notificacion(app)
 
 
 def refresh_nav_badges_sync(app) -> None:
