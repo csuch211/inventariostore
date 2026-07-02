@@ -34,15 +34,18 @@ _SRC = Path(__file__).resolve().parents[1]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
-from api.rate_limiter import RateLimitMiddleware
-from config.settings import ACCESS_TOKEN_EXPIRE_MINUTES
-from core.controller import InventarioController
-from services.database import DatabaseManager
-from services.permissions import ALL_PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS
-from utils.logger import setup_logger
+from api.rate_limiter import RateLimitMiddleware  # noqa: E402
+from config.settings import ACCESS_TOKEN_EXPIRE_MINUTES, CORS_ORIGINS, DEBUG  # noqa: E402
+from core.controller import InventarioController  # noqa: E402
+from services.database import DatabaseManager  # noqa: E402
+from services.messaging import send_via_channel  # noqa: E402
+from services.notifier import get_smtp_config, is_configured, send_custom_alert  # noqa: E402
+from services.permissions import ALL_PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS  # noqa: E402
+from utils.crypto import encrypt_value  # noqa: E402
+from utils.logger import setup_logger  # noqa: E402
 
 logger = setup_logger(__name__)
 
@@ -123,10 +126,11 @@ _db_instance: DatabaseManager | None = None
 
 def build_db() -> DatabaseManager:
     """Get or create a cached DatabaseManager instance."""
-    global _db_instance
-    if _db_instance is None:
-        _db_instance = DatabaseManager()
-    return _db_instance
+    inst = _db_instance
+    if inst is None:
+        inst = DatabaseManager()
+        globals()['_db_instance'] = inst
+    return inst
 
 
 def build_controller() -> InventarioController:
@@ -134,11 +138,11 @@ def build_controller() -> InventarioController:
     return InventarioController()
 
 
-def _get_auth_service() -> "AuthService":
+def _get_auth_service():
     """Build an AuthService with DB access for JWT operations."""
-    from services.auth import AuthService as AuthServiceCls
+    from services.auth import AuthService
 
-    return AuthServiceCls(db=build_db())
+    return AuthService(db=build_db())
 
 
 def require_user(
@@ -198,13 +202,14 @@ def _resolve_user_perms(db: DatabaseManager, username: str):
             defaults = ROLE_DEFAULT_PERMISSIONS.get(rol_name, set())
             perms |= defaults
             return rol_name, perms
-    except Exception:
+    except Exception as exc:
+        logger.warning("Failed to resolve user perms, falling back to operador: %s", exc)
         return "operador", set(ROLE_DEFAULT_PERMISSIONS.get("operador", ALL_PERMISSION_KEYS))
 
 
 # ----- App -----
 
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 app = FastAPI(
     title="Inventariostore REST API",
@@ -215,7 +220,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -256,7 +261,8 @@ def health():
             conn.execute("SELECT 1")
         return {"status": "ok", "database": "connected"}
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Service unhealthy: {e}")
+        msg = f"Service unhealthy: {e}" if DEBUG else "Service unhealthy"
+        raise HTTPException(status_code=503, detail=msg)
 
 
 class LoginResponse(BaseModel):
@@ -273,7 +279,16 @@ class RefreshRequest(BaseModel):
 
 
 @app.post("/auth/login", response_model=LoginResponse)
-async def login(req: LoginRequest):
+async def login(req: LoginRequest, request: Request):
+    from api.rate_limiter import login_rate_limiter
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not login_rate_limiter.check(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many login attempts. Try again in 1 minute.",
+        )
+
     auth_svc = _get_auth_service()
     try:
         # Authenticate and get user info
@@ -304,7 +319,8 @@ async def login(req: LoginRequest):
             permissions=session["permissions"],
         )
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        msg = str(e) if DEBUG else "Invalid credentials"
+        raise HTTPException(status_code=401, detail=msg)
 
 
 @app.post("/auth/register", status_code=201)
@@ -366,7 +382,6 @@ async def register(req: RegisterRequest):
 
         if token:
             # Send verification email if SMTP is configured
-            from services.notifier import get_smtp_config, is_configured, send_custom_alert
 
             cfg = get_smtp_config(db)
             if is_configured(cfg):
@@ -416,7 +431,6 @@ async def verify_email(req: VerifyEmailRequest):
 @app.post("/auth/resend-verification")
 async def resend_verification(req: ForgotPasswordRequest):
     """Resend email verification token. Always returns success to prevent enumeration."""
-    from services.notifier import get_smtp_config, is_configured, send_custom_alert
 
     db = build_db()
     user = db.obtener_usuario_por_username_full(req.username)
@@ -428,7 +442,7 @@ async def resend_verification(req: ForgotPasswordRequest):
         }
 
     # Create new verification token
-    auth_svc = AuthService(db=db)
+    auth_svc = _get_auth_service()
     token = auth_svc.create_email_verification_token(user["id"])
 
     if token:
@@ -462,7 +476,6 @@ class ResetPasswordRequest(BaseModel):
 @app.post("/auth/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
     """Request a password reset token. Always returns success to prevent user enumeration."""
-    from services.notifier import get_smtp_config, is_configured, send_custom_alert
 
     auth_svc = _get_auth_service()
 
@@ -510,7 +523,6 @@ class SMTPConfigIn(BaseModel):
 async def get_smtp_config_endpoint(user: str = Depends(require_user)):
     """Get current SMTP configuration (password masked)."""
     db = build_db()
-    from services.notifier import get_smtp_config
 
     cfg = get_smtp_config(db)
     return {
@@ -532,7 +544,7 @@ async def save_smtp_config(req: SMTPConfigIn, user: str = Depends(require_user))
         db.guardar_config("smtp_host", req.host)
         db.guardar_config("smtp_port", str(req.port))
         db.guardar_config("smtp_user", req.user)
-        db.guardar_config("smtp_password", req.password)
+        db.guardar_config("smtp_password", encrypt_value(req.password))
         db.guardar_config("smtp_from_email", req.from_email)
         db.guardar_config("smtp_to_email", req.from_email)  # Default to from_email
         db.guardar_config("notify_low_stock", "si" if req.enabled else "no")
@@ -549,7 +561,6 @@ async def save_smtp_config(req: SMTPConfigIn, user: str = Depends(require_user))
 async def test_smtp_connection(user: str = Depends(require_user)):
     """Test SMTP connection without sending an email."""
     db = build_db()
-    from services.notifier import get_smtp_config, is_configured
 
     cfg = get_smtp_config(db)
     if not is_configured(cfg):
@@ -574,14 +585,14 @@ async def test_smtp_connection(user: str = Depends(require_user)):
             status_code=400, detail="Cannot connect to SMTP server - check host/port"
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"SMTP connection failed: {str(e)}")
+        msg = f"SMTP connection failed: {e}" if DEBUG else "SMTP connection failed"
+        raise HTTPException(status_code=400, detail=msg)
 
 
 @app.post("/smtp/send-test")
 async def send_test_email(user: str = Depends(require_user)):
     """Send a test email to verify SMTP configuration."""
     db = build_db()
-    from services.notifier import send_custom_alert
 
     result = send_custom_alert(
         db,
@@ -599,6 +610,119 @@ async def send_test_email(user: str = Depends(require_user)):
         raise HTTPException(
             status_code=500, detail=f"Failed to send test email: {result.get('reason')}"
         )
+
+
+# ----- WhatsApp Configuration -----
+
+
+class WhatsAppConfigIn(BaseModel):
+    api_key: str = Field(default="", max_length=500)
+    phone_id: str = Field(default="", max_length=100)
+    api_url: str = Field(default="https://graph.facebook.com/v18.0", max_length=300)
+    enabled: bool = False
+
+
+@app.get("/messaging/whatsapp/config")
+async def get_whatsapp_config(user: str = Depends(require_user)):
+    """Get WhatsApp configuration."""
+    ctrl = InventarioController()
+    ctrl.current_user = user
+    cfg = await ctrl.obtener_config_whatsapp()
+    return {
+        "api_key": "***" if cfg.get("wa_api_key") else "",
+        "phone_id": cfg.get("wa_phone_id", ""),
+        "api_url": cfg.get("wa_api_url", "https://graph.facebook.com/v18.0"),
+        "enabled": cfg.get("wa_enabled", "no") == "si",
+    }
+
+
+@app.post("/messaging/whatsapp/config")
+async def save_whatsapp_config(req: WhatsAppConfigIn, user: str = Depends(require_user)):
+    """Save WhatsApp configuration."""
+    ctrl = InventarioController()
+    ctrl.current_user = user
+    config = {}
+    # Only update keys that are non-empty (allow clearing)
+    config["wa_api_key"] = req.api_key
+    config["wa_phone_id"] = req.phone_id
+    config["wa_api_url"] = req.api_url
+    config["wa_enabled"] = "si" if req.enabled else "no"
+    ok, result = await ctrl.guardar_config_whatsapp(config)
+    if ok:
+        return {"message": "WhatsApp configuration saved successfully"}
+    raise HTTPException(status_code=500, detail=result.get("error", "Failed to save"))
+
+
+@app.post("/messaging/whatsapp/test")
+async def test_whatsapp(req: WhatsAppConfigIn, user: str = Depends(require_user)):
+    """Send a test WhatsApp message."""
+    ctrl = InventarioController()
+    ctrl.current_user = user
+    # Save temporarily, send test, then report
+    config = {
+        "wa_api_key": req.api_key,
+        "wa_phone_id": req.phone_id,
+        "wa_api_url": req.api_url,
+        "wa_enabled": "si",
+    }
+    result = await send_via_channel("whatsapp", req.phone_id, "Test", "Test from InventarioStore", config)
+    if result.get("sent"):
+        return {"message": "WhatsApp test message sent", "message_id": result.get("message_id")}
+    raise HTTPException(status_code=400, detail=result.get("reason", "Failed"))
+
+
+# ----- Telegram Configuration -----
+
+
+class TelegramConfigIn(BaseModel):
+    bot_token: str = Field(default="", max_length=500)
+    chat_id: str = Field(default="", max_length=100)
+    enabled: bool = False
+
+
+@app.get("/messaging/telegram/config")
+async def get_telegram_config(user: str = Depends(require_user)):
+    """Get Telegram configuration."""
+    ctrl = InventarioController()
+    ctrl.current_user = user
+    cfg = await ctrl.obtener_config_telegram()
+    return {
+        "bot_token": "***" if cfg.get("tg_bot_token") else "",
+        "chat_id": cfg.get("tg_chat_id", ""),
+        "enabled": cfg.get("tg_enabled", "no") == "si",
+    }
+
+
+@app.post("/messaging/telegram/config")
+async def save_telegram_config(req: TelegramConfigIn, user: str = Depends(require_user)):
+    """Save Telegram configuration."""
+    ctrl = InventarioController()
+    ctrl.current_user = user
+    config = {
+        "tg_bot_token": req.bot_token,
+        "tg_chat_id": req.chat_id,
+        "tg_enabled": "si" if req.enabled else "no",
+    }
+    ok, result = await ctrl.guardar_config_telegram(config)
+    if ok:
+        return {"message": "Telegram configuration saved successfully"}
+    raise HTTPException(status_code=500, detail=result.get("error", "Failed to save"))
+
+
+@app.post("/messaging/telegram/test")
+async def test_telegram(req: TelegramConfigIn, user: str = Depends(require_user)):
+    """Send a test Telegram message."""
+    ctrl = InventarioController()
+    ctrl.current_user = user
+    config = {
+        "tg_bot_token": req.bot_token,
+        "tg_chat_id": req.chat_id,
+        "tg_enabled": "si",
+    }
+    result = await send_via_channel("telegram", req.chat_id, "Test", "<b>Test</b> from InventarioStore", config)
+    if result.get("sent"):
+        return {"message": "Telegram test message sent", "message_id": result.get("message_id")}
+    raise HTTPException(status_code=400, detail=result.get("reason", "Failed"))
 
 
 @app.post("/auth/reset-password")

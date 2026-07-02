@@ -1,5 +1,6 @@
 """CRM repository for contacts, opportunities, and activities."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -73,6 +74,11 @@ class CRMRepository(BaseRepository):
                     where.append("c.empresa = ?")
                     params.append(empresa)
 
+                _allowed_columns = {"c.estado", "c.empresa"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where)
                 cursor = conn.execute(
                     f"""SELECT c.*, cl.nombre as cliente_nombre
@@ -192,6 +198,11 @@ class CRMRepository(BaseRepository):
                     where.append("o.contacto_id = ?")
                     params.append(contacto_id)
 
+                _allowed_columns = {"o.estado", "o.contacto_id"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT o.*, c.nombre, c.apellido, c.empresa
@@ -219,7 +230,7 @@ class CRMRepository(BaseRepository):
                 updates["fecha_cierre_real"] = datetime.now().isoformat()
 
             set_clause = ", ".join(f"{k} = ?" for k in updates)
-            values = list(updates.values()) + [oportunidad_id]
+            values = [*list(updates.values()), oportunidad_id]
 
             with self._get_connection() as conn:
                 conn.execute(
@@ -311,6 +322,11 @@ class CRMRepository(BaseRepository):
                     where.append("a.estado = ?")
                     params.append(estado)
 
+                _allowed_columns = {"a.contacto_id", "a.estado"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT a.*, c.nombre, c.apellido
@@ -389,6 +405,11 @@ class CRMRepository(BaseRepository):
                     where.append("n.oportunidad_id = ?")
                     params.append(oportunidad_id)
 
+                _allowed_columns = {"n.contacto_id", "n.oportunidad_id"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT n.* FROM notas_crm n

@@ -3,12 +3,13 @@
 import flet as ft
 
 from config.settings import THEME_PRIMARY_COLOR, THEME_SURFACE_COLOR
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, SnackBarHelper
 
 
 async def show_scanner(app) -> None:
     """Display barcode/QR scanner view"""
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
 
     async def handle_scan_input(e):
         """Handle scanned or typed barcode input"""
@@ -34,8 +35,8 @@ async def show_scanner(app) -> None:
                     alignment="center",
                 )
             app.page.update()
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al inicializar el escáner.")
 
     async def handle_pick_file(e):
         SnackBarHelper.info(app.page, "Selector de archivos no disponible en esta versión")
@@ -43,16 +44,16 @@ async def show_scanner(app) -> None:
     scan_field = ft.TextField(
         label="Código de barras / QR",
         hint_text="Escanee o ingrese manualmente el código",
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        selection_color=C["selection"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=palette["input_fill"],
+        color=palette["text_on_input"],
+        cursor_color=palette["cursor"],
+        selection_color=palette["selection"],
+        label_style=ft.TextStyle(color=palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=palette["text_muted"]),
+        text_style=ft.TextStyle(color=palette["text_on_input"], size=14),
         autofocus=True,
         on_submit=handle_scan_input,
         suffix_icon=ft.icons.Icons.SEARCH,

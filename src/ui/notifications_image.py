@@ -2,7 +2,7 @@
 Notifications and image search views — push queue and image search.
 
 Extracted from phase3_views_part2.py during AppView decomposition.
-Re-exported by ui/phase3.py.
+Re-exported by ui/extended_features.py.
 """
 
 import asyncio
@@ -11,10 +11,14 @@ import flet as ft
 
 from config.settings import (
     THEME_ACCENT_COLOR,
+    THEME_ACCENT_LIGHT,
     THEME_PRIMARY_COLOR,
     THEME_SUCCESS_COLOR,
+    THEME_SUCCESS_LIGHT,
     THEME_WARNING_COLOR,
+    THEME_WARNING_LIGHT,
 )
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, SnackBarHelper
 from utils.i18n import t
 from utils.logger import setup_logger
@@ -22,12 +26,17 @@ from utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
+def _c(app):
+    """Get the active color palette."""
+    return theme_manager.palette(page=app.page)
+
+
 # ============ Push Queue ============
 
 
 async def show_push_queue(app):
     """Display push notification queue view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     estado_filter = ft.Dropdown(
@@ -40,16 +49,17 @@ async def show_push_queue(app):
         ],
         value="",
         width=200,
-        fill_color="#F8FAFC",
-        color="#0F172A",
-        text_style=ft.TextStyle(color="#0F172A", size=14),
+        fill_color=c["input_fill"],
+        color=c["text_primary"],
+        text_style=ft.TextStyle(color=c["text_primary"], size=14),
     )
 
     async def refresh():
         try:
             estado = estado_filter.value or None
             jobs = await controller.obtener_jobs_push(estado=estado)
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener jobs push: %s", e)
             jobs = []
 
         rows = []
@@ -59,7 +69,7 @@ async def show_push_queue(app):
                 "pendiente": THEME_WARNING_COLOR,
                 "enviado": THEME_SUCCESS_COLOR,
                 "fallido": THEME_ACCENT_COLOR,
-            }.get(estado_val, "#475569")
+            }.get(estado_val, c["text_secondary"])
 
             rows.append(
                 ft.DataRow(
@@ -86,7 +96,7 @@ async def show_push_queue(app):
                 ft.DataColumn(ft.Text("Fecha")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         stats = {
@@ -101,14 +111,14 @@ async def show_push_queue(app):
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Text("Total", size=12, color="#475569"),
+                            ft.Text("Total", size=12, color=c["text_secondary"]),
                             ft.Text(str(stats["total"]), size=24, weight=ft.FontWeight.BOLD),
                         ],
                         spacing=4,
                     ),
                     padding=16,
                     border_radius=8,
-                    bgcolor="#F8FAFC",
+                    bgcolor=c["input_fill"],
                     width=120,
                 ),
                 ft.Container(
@@ -126,7 +136,7 @@ async def show_push_queue(app):
                     ),
                     padding=16,
                     border_radius=8,
-                    bgcolor="#FEF3C7",
+                    bgcolor=THEME_WARNING_LIGHT,
                     width=120,
                 ),
                 ft.Container(
@@ -144,7 +154,7 @@ async def show_push_queue(app):
                     ),
                     padding=16,
                     border_radius=8,
-                    bgcolor="#DCFCE7",
+                    bgcolor=THEME_SUCCESS_LIGHT,
                     width=120,
                 ),
                 ft.Container(
@@ -162,7 +172,7 @@ async def show_push_queue(app):
                     ),
                     padding=16,
                     border_radius=8,
-                    bgcolor="#FEE2E2",
+                    bgcolor=THEME_ACCENT_LIGHT,
                     width=120,
                 ),
             ],
@@ -173,7 +183,7 @@ async def show_push_queue(app):
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay jobs en la cola", color="#475569"),
+                content=ft.Text("No hay jobs en la cola", color=c["text_secondary"]),
                 padding=40,
             )
         )
@@ -211,8 +221,8 @@ async def show_push_queue(app):
                 app.page, f"Despachados: {enviados} enviados, {fallidos} fallidos"
             )
             await refresh()
-        except Exception as ex:
-            SnackBarHelper.error(app.page, str(ex))
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al despachar notificaciones.")
 
     refresh_btn = ft.Button(
         content=ft.Row(
@@ -246,15 +256,25 @@ async def show_push_queue(app):
 
 async def show_image_search(app):
     """Display image search view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     results_container = ft.Container(padding=20, expand=True)
-    status_text = ft.Text("", size=12, color="#475569")
+    status_text = ft.Text("", size=12, color=c["text_secondary"])
+
+    ruta_field = ft.TextField(
+        label="Ruta de la imagen",
+        hint_text="C:\\ruta\\a\\imagen.jpg",
+        value="",
+        expand=True,
+        read_only=False,
+        fill_color=c["input_fill"],
+        color=c["text_primary"],
+    )
 
     async def do_search(image_path):
         if not image_path:
-            SnackBarHelper.error(app.page, "Selecciona una imagen primero")
+            SnackBarHelper.error(app.page, "Ingresa la ruta de una imagen")
             return
 
         status_text.value = "Buscando productos similares..."
@@ -270,7 +290,7 @@ async def show_image_search(app):
         if not results:
             status_text.value = "No se encontraron productos similares"
             results_container.content = ft.Container(
-                content=ft.Text("No se encontraron productos similares", color="#475569"),
+                content=ft.Text("No se encontraron productos similares", color=c["text_secondary"]),
                 padding=20,
             )
             app.page.update()
@@ -302,38 +322,25 @@ async def show_image_search(app):
                 ft.DataColumn(ft.Text("Similitud")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         results_container.content = ft.Container(content=table, expand=True)
         status_text.value = f"Encontrados {len(results)} productos similares"
         app.page.update()
 
-    file_picker = ft.FilePicker()
-    if app.page:
-        app.page.overlay.append(file_picker)
+    async def handle_search(e):
+        await do_search(ruta_field.value.strip())
 
-    async def pick_image(e):
-        await file_picker.pick_files_async(
-            dialog_title="Seleccionar imagen",
-            allowed_extensions=["png", "jpg", "jpeg", "webp"],
-        )
-
-    def on_file_picked(e):
-        if e.files:
-            asyncio.create_task(do_search(e.files[0].path))
-
-    file_picker.on_result = on_file_picked
-
-    pick_btn = ft.Button(
+    search_btn = ft.Button(
         content=ft.Row(
             [
-                ft.Icon(ft.icons.Icons.IMAGE, color="white"),
-                ft.Text("Seleccionar Imagen", color="white"),
+                ft.Icon(ft.icons.Icons.SEARCH, color="white"),
+                ft.Text("Buscar", color="white"),
             ],
             spacing=5,
         ),
-        on_click=pick_image,
+        on_click=handle_search,
         style=ft.ButtonStyle(bgcolor=THEME_PRIMARY_COLOR),
     )
 
@@ -345,12 +352,16 @@ async def show_image_search(app):
                     content=ft.Column(
                         [
                             ft.Text(
-                                "Selecciona una imagen para buscar productos similares en el inventario",
+                                "Ingresa la ruta de una imagen para buscar productos similares en el inventario",
                                 size=14,
-                                color="#475569",
+                                color=c["text_secondary"],
                             ),
                             ft.Container(height=10),
-                            pick_btn,
+                            ft.Row(
+                                [ruta_field, search_btn],
+                                spacing=10,
+                                vertical_alignment=ft.CrossAxisAlignment.START,
+                            ),
                             status_text,
                         ],
                         spacing=10,

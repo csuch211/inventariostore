@@ -13,49 +13,67 @@ class InventarioError(Exception):
 InventarioException = InventarioError
 
 
-class DatabaseException(InventarioError):
+class DatabaseError(InventarioError):
     """Database-related errors"""
 
     pass
 
 
-class ValidationException(InventarioError):
+class ValidationError(InventarioError):
     """Validation errors"""
 
     pass
 
 
-class AuthenticationException(InventarioError):
+class AuthenticationError(InventarioError):
     """Authentication errors"""
 
     pass
 
 
-class AuthorizationException(InventarioError):
+class AuthorizationError(InventarioError):
     """Authorization errors"""
 
     pass
 
 
-class ProductNotFoundException(InventarioError):
+class ProductNotFoundError(InventarioError):
     """Product not found"""
 
     pass
 
 
-class DuplicateProductException(InventarioError):
+# TODO: Use ProductNotFoundError in ProductRepository.obtener_producto_por_id
+#       and in actualizar_stock / actualizar_producto when product is not found.
+
+
+class DuplicateProductError(InventarioError):
     """Duplicate product code"""
 
     pass
 
 
-class StockInsufficientException(InventarioError):
+# DuplicateProductError is already used in ProductRepository.crear_producto
+
+
+class StockInsufficientError(InventarioError):
     """Operation would drive stock below zero."""
 
     pass
 
 
-class InvalidStateException(InventarioError):
+class InvalidStateError(InventarioError):
     """Operation is not valid given the current state of the resource."""
 
     pass
+
+
+# Backward-compatibility aliases
+DatabaseException = DatabaseError
+ValidationException = ValidationError
+AuthenticationException = AuthenticationError
+AuthorizationException = AuthorizationError
+ProductNotFoundException = ProductNotFoundError
+DuplicateProductException = DuplicateProductError
+StockInsufficientException = StockInsufficientError
+InvalidStateException = InvalidStateError

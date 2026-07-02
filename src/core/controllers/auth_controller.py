@@ -40,7 +40,7 @@ class AuthController:
             )
             return session
         except Exception as e:
-            logger.error(f"Login failed: {e}")
+            logger.exception(f"Login failed: {e}")
             raise
 
     async def logout(self, token: str):

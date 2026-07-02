@@ -36,7 +36,7 @@ class DocumentController:
             result = self.db.document_repo.crear_categoria_documento(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating category: {e}")
+            logger.exception(f"Error creating category: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -45,7 +45,7 @@ class DocumentController:
         try:
             return self.db.document_repo.obtener_categorias_documento()
         except Exception as e:
-            logger.error(f"Error fetching categories: {e}")
+            logger.exception(f"Error fetching categories: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -57,7 +57,7 @@ class DocumentController:
             )
             return True, {"message": "Category deleted"}
         except Exception as e:
-            logger.error(f"Error deleting category: {e}")
+            logger.exception(f"Error deleting category: {e}")
             return False, {"error": str(e)}
 
     # ============ Documentos ============
@@ -70,7 +70,7 @@ class DocumentController:
             result = self.db.document_repo.crear_documento(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating document: {e}")
+            logger.exception(f"Error creating document: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -79,7 +79,7 @@ class DocumentController:
         try:
             return self.db.document_repo.obtener_documento(documento_id)
         except Exception as e:
-            logger.error(f"Error fetching document: {e}")
+            logger.exception(f"Error fetching document: {e}")
             return None
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -96,7 +96,7 @@ class DocumentController:
                 categoria_id=categoria_id, tipo=tipo, estado=estado, autor=autor
             )
         except Exception as e:
-            logger.error(f"Error fetching documents: {e}")
+            logger.exception(f"Error fetching documents: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -107,7 +107,7 @@ class DocumentController:
             self.db.document_repo.actualizar_documento(documento_id, **kwargs)
             return True, {"message": "Document updated"}
         except Exception as e:
-            logger.error(f"Error updating document: {e}")
+            logger.exception(f"Error updating document: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -119,7 +119,7 @@ class DocumentController:
             )
             return True, {"message": "Document deleted"}
         except Exception as e:
-            logger.error(f"Error deleting document: {e}")
+            logger.exception(f"Error deleting document: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -128,7 +128,7 @@ class DocumentController:
         try:
             return self.db.document_repo.buscar_documentos(query)
         except Exception as e:
-            logger.error(f"Error searching documents: {e}")
+            logger.exception(f"Error searching documents: {e}")
             return []
 
     # ============ Versiones ============
@@ -141,7 +141,7 @@ class DocumentController:
             result = self.db.document_repo.crear_version(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating version: {e}")
+            logger.exception(f"Error creating version: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -150,7 +150,7 @@ class DocumentController:
         try:
             return self.db.document_repo.obtener_versiones(documento_id)
         except Exception as e:
-            logger.error(f"Error fetching versions: {e}")
+            logger.exception(f"Error fetching versions: {e}")
             return []
 
     # ============ Tags ============
@@ -162,7 +162,7 @@ class DocumentController:
             self.db.document_repo.agregar_tag(documento_id, tag)
             return True, {"message": "Tag added"}
         except Exception as e:
-            logger.error(f"Error adding tag: {e}")
+            logger.exception(f"Error adding tag: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -172,7 +172,7 @@ class DocumentController:
             self.db.document_repo.eliminar_tag(documento_id, tag)
             return True, {"message": "Tag removed"}
         except Exception as e:
-            logger.error(f"Error removing tag: {e}")
+            logger.exception(f"Error removing tag: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -181,7 +181,7 @@ class DocumentController:
         try:
             return self.db.document_repo.buscar_por_tag(tag)
         except Exception as e:
-            logger.error(f"Error searching by tag: {e}")
+            logger.exception(f"Error searching by tag: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -190,5 +190,5 @@ class DocumentController:
         try:
             return self.db.document_repo.obtener_tags_populares(limit=limit)
         except Exception as e:
-            logger.error(f"Error fetching popular tags: {e}")
+            logger.exception(f"Error fetching popular tags: {e}")
             return []

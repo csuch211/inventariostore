@@ -34,7 +34,7 @@ from flet_charts.pie_chart_section import PieChartSection as _PieChartSection
 CHART_HEIGHT = 250
 
 # Color palette - sequential, accessible
-PALETTE = [
+PALETTE = (
     "#1976D2",  # primary blue
     "#388E3C",  # green
     "#F57C00",  # orange
@@ -45,7 +45,7 @@ PALETTE = [
     "#5D4037",  # brown
     "#455A64",  # blue-grey
     "#D32F2F",  # red
-]
+)
 
 
 def _color_for(index: int) -> str:

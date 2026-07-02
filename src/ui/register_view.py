@@ -1,4 +1,4 @@
-"""
+"""User registration view, refactored for clarity.
 User registration view — graphical form for new user signup.
 
 Provides a clean registration form with real-time validation,
@@ -11,9 +11,10 @@ import re
 import flet as ft
 
 from ui.components import SnackBarHelper
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def _check_password_strength(password: str) -> tuple[int, str, str]:
@@ -42,51 +43,52 @@ def _check_password_strength(password: str) -> tuple[int, str, str]:
 
 async def show_register_form(app):
     """Display user registration form."""
-    C = app._get_colors()
+    from core.theme_manager import theme_manager
+    palette = theme_manager.palette(page=app.page)
 
     # Form fields
     nombre_field = ft.TextField(
         label="Nombre completo",
         width=340,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=palette["input_fill"],
+        color=palette["text_on_input"],
+        cursor_color=palette["cursor"],
+        label_style=ft.TextStyle(color=palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=palette["text_muted"]),
+        text_style=ft.TextStyle(color=palette["text_on_input"], size=14),
         hint_text="Tu nombre",
     )
 
     email_field = ft.TextField(
         label="Email",
         width=340,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=palette["input_fill"],
+        color=palette["text_on_input"],
+        cursor_color=palette["cursor"],
+        label_style=ft.TextStyle(color=palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=palette["text_muted"]),
+        text_style=ft.TextStyle(color=palette["text_on_input"], size=14),
         hint_text="tu@email.com",
     )
 
     username_field = ft.TextField(
         label="Usuario",
         width=340,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=palette["input_fill"],
+        color=palette["text_on_input"],
+        cursor_color=palette["cursor"],
+        label_style=ft.TextStyle(color=palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=palette["text_muted"]),
+        text_style=ft.TextStyle(color=palette["text_on_input"], size=14),
         hint_text="letras, números, guiones",
     )
 
@@ -95,15 +97,15 @@ async def show_register_form(app):
         width=340,
         password=True,
         can_reveal_password=True,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=palette["input_fill"],
+        color=palette["text_on_input"],
+        cursor_color=palette["cursor"],
+        label_style=ft.TextStyle(color=palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=palette["text_muted"]),
+        text_style=ft.TextStyle(color=palette["text_on_input"], size=14),
         hint_text="Mínimo 8 caracteres",
     )
 
@@ -112,21 +114,21 @@ async def show_register_form(app):
         width=340,
         password=True,
         can_reveal_password=True,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=palette["input_fill"],
+        color=palette["text_on_input"],
+        cursor_color=palette["cursor"],
+        label_style=ft.TextStyle(color=palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=palette["text_muted"]),
+        text_style=ft.TextStyle(color=palette["text_on_input"], size=14),
         hint_text="Repite tu contraseña",
     )
 
     # Password strength indicator
     strength_bar = ft.ProgressBar(width=340, color="gray", value=0)
-    strength_text = ft.Text("", size=11, color=C["text_muted"])
+    strength_text = ft.Text("", size=11, color=palette["text_muted"])
 
     def update_strength(e):
         pwd = password_field.value or ""
@@ -144,19 +146,22 @@ async def show_register_form(app):
 
     password_field.on_change = update_strength
 
-    error_text = ft.Text("", color=C["accent"], size=12)
+    error_text = ft.Text("", color=palette["accent"], size=12)
     success_text = ft.Text("", color="green", size=12)
 
     async def handle_register(e):
         """Handle registration button click."""
         error_text.value = ""
         success_text.value = ""
+        app.page.update() # Ensure previous errors are cleared immediately
 
         nombre = nombre_field.value.strip() if nombre_field.value else ""
         email = email_field.value.strip() if email_field.value else ""
         username = username_field.value.strip() if username_field.value else ""
         password = password_field.value or ""
         confirm = confirm_field.value or ""
+
+        logger.info(f"Attempting registration for username: {username}, email: {email}")
 
         # Validation
         if not nombre or len(nombre) < 2:
@@ -202,6 +207,7 @@ async def show_register_form(app):
         try:
             register_btn.disabled = True
             app.page.update()
+            logger.info("Client-side validation passed. Calling backend registration API.")
 
             # Call registration API
             from api.rest import RegisterRequest, register
@@ -212,7 +218,8 @@ async def show_register_form(app):
                 nombre=nombre,
                 email=email,
             )
-            result = await register(req)
+            await register(req)
+            logger.info("Backend registration API call successful.")
 
             SnackBarHelper.success(app.page, "Cuenta creada exitosamente")
 
@@ -222,15 +229,17 @@ async def show_register_form(app):
             await show_verify_email(app, username=username, email=email)
 
         except Exception as ex:
-            error_text.value = f"Error: {ex}"
-            SnackBarHelper.error(app.page, f"Error de registro: {ex}")
+            logger.exception(f"Error during user registration for {username}: {ex}")
+            error_text.value = f"Error de registro: {ex}" # Display the actual exception message
+            SnackBarHelper.error(app.page, "Error de registro. Verifique sus datos e intente nuevamente.")
         finally:
             register_btn.disabled = False
             app.page.update()
 
     def go_back_to_login(e):
         """Navigate back to login screen."""
-        asyncio.create_task(app._show_login_screen())
+        task = asyncio.create_task(app._show_login_screen())
+        task.add_done_callback(lambda t: None)
 
     register_btn = ft.Button(
         content=ft.Text("Crear Cuenta"),
@@ -239,7 +248,7 @@ async def show_register_form(app):
         on_click=handle_register,
         style=ft.ButtonStyle(
             color="white",
-            bgcolor=C["primary"],
+            bgcolor=palette["primary"],
         ),
     )
 
@@ -256,18 +265,18 @@ async def show_register_form(app):
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.icons.Icons.PERSON_ADD, size=40, color=C["primary"]),
+                            ft.Icon(ft.icons.Icons.PERSON_ADD, size=40, color=palette["primary"]),
                             ft.Text(
                                 "Crear Cuenta",
                                 size=24,
                                 weight=ft.FontWeight.BOLD,
-                                color=C["primary"],
+                                color=palette["primary"],
                                 text_align=ft.TextAlign.CENTER,
                             ),
                             ft.Text(
                                 "Regístrate para acceder al sistema",
                                 size=12,
-                                color=C["text_muted"],
+                                color=palette["text_muted"],
                                 text_align=ft.TextAlign.CENTER,
                             ),
                         ],
@@ -276,7 +285,7 @@ async def show_register_form(app):
                     ),
                     padding=ft.padding.Padding(left=0, right=0, top=0, bottom=10),
                 ),
-                ft.Divider(height=1, color=C["divider"]),
+                ft.Divider(height=1, color=palette["divider"]),
                 ft.Container(height=5),
                 nombre_field,
                 email_field,
@@ -294,10 +303,10 @@ async def show_register_form(app):
             spacing=10,
             width=card_width,
         ),
-        bgcolor=C["surface"],
+        bgcolor=palette["surface"],
         padding=30,
         border_radius=16,
-        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=C["shadow"]),
+        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=palette["shadow"]),
     )
 
     register_container = ft.Container(
@@ -310,13 +319,12 @@ async def show_register_form(app):
             expand=True,
         ),
         expand=True,
-        bgcolor=C["background"],
-        alignment=ft.alignment.center,
+        bgcolor=palette["background"],
+        alignment=ft.alignment.Alignment.CENTER,
     )
 
-    if app.main_view:
-        app.main_view.content = register_container
-    else:
-        app.page.clean()
-        app.page.add(register_container)
+    # Simplified rendering logic: always clear and add directly
+    app.page.clean()
+    app.page.add(register_container)
+    logger.info("RegisterView: Page cleared, register_container added, and update requested.")
     app.page.update()

@@ -1,15 +1,15 @@
 """Services layer — database, auth, export, notifications, migrations."""
 
 __all__ = [
+    "advanced_inventory_db",
     "auth",
     "backup",
     "code_handler",
     "database",
     "export",
+    "extended_features_db",
     "migrator",
     "notifier",
     "permissions",
-    "phase1_db",
-    "phase3_db",
     "stock_monitor",
 ]

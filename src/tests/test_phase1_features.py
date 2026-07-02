@@ -27,15 +27,15 @@ sys.path.insert(0, str(SRC_DIR))
 
 # Tell config.settings to use the test DB. We do this by monkey-patching
 # the module attribute before any service imports create the manager.
-import config.settings as _settings  # noqa: E402
+import config.settings as _settings
 
 _settings.DATABASE_FILE = _settings.DATABASE_PATH / "inventario_p1test.db"
 # Remove any stale file from previous test runs in the real path
 if _settings.DATABASE_FILE.exists():
     _settings.DATABASE_FILE.unlink()
 
-from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
+from core.controller import InventarioController
+from services.permissions import ALL_PERMISSION_KEYS
 
 PASS = "✔"
 FAIL = "✘"

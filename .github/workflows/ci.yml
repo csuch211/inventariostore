@@ -72,11 +72,23 @@ jobs:
       - name: Install dependencies
         run: uv sync
       
-      - name: Run tests
-        run: uv run pytest src/tests/ -v --tb=short --ignore=src/tests/test_phase3_views_part2.py --ignore=src/tests/test_dashboard_unified.py
+      - name: Run core tests
+        run: uv run pytest src/tests/ -v --tb=short -x --ignore=src/tests/test_api_rest.py --ignore=src/tests/test_sales_flow.py --ignore=src/tests/test_auth_rbac.py --ignore=src/tests/test_replenishment_flow.py --ignore=src/tests/test_automation_engine.py
+
+      - name: Run flow tests
+        run: >
+          uv run pytest 
+          src/tests/test_sales_flow.py 
+          src/tests/test_auth_rbac.py 
+          src/tests/test_replenishment_flow.py 
+          src/tests/test_automation_engine.py 
+          -v --tb=short
+      
+      - name: Run API tests
+        run: uv run pytest src/tests/test_api_rest.py -v --tb=short
       
       - name: Run tests with coverage
-        run: uv run pytest src/tests/ --cov=src --cov-report=xml --ignore=src/tests/test_phase3_views_part2.py --ignore=src/tests/test_dashboard_unified.py
+        run: uv run pytest src/tests/ --cov=src --cov-report=xml --cov-fail-under=70
       
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.14'

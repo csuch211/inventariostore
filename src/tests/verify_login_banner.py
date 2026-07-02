@@ -26,8 +26,8 @@ fake_charts.LineChart = type("LineChart", (), {"build": staticmethod(lambda *a, 
 fake_charts.PieChart = type("PieChart", (), {"build": staticmethod(lambda *a, **k: None)})
 sys.modules["ui.charts"] = fake_charts
 
-from ui.app_view import AppView  # noqa: E402
-from utils.i18n import initialize_language  # noqa: E402
+from ui.app_view import AppView
+from utils.i18n import initialize_language
 
 initialize_language("es")
 

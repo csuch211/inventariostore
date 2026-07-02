@@ -1,5 +1,6 @@
 """Purchasing repository for quotations, supplier evaluations, and receiving."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -122,6 +123,11 @@ class PurchasingRepository(BaseRepository):
                     where.append("c.estado = ?")
                     params.append(estado)
 
+                _allowed_columns = {"c.proveedor_id", "c.estado"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT c.*, p.nombre as proveedor_nombre
@@ -335,6 +341,11 @@ class PurchasingRepository(BaseRepository):
                     where.append("r.proveedor_id = ?")
                     params.append(proveedor_id)
 
+                _allowed_columns = {"r.proveedor_id"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT r.*, p.nombre as proveedor_nombre

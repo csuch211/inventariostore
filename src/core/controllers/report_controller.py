@@ -36,7 +36,7 @@ class ReportController:
         try:
             return self.db.obtener_estadisticas()
         except Exception as e:
-            logger.error(f"Error fetching statistics: {e}")
+            logger.exception(f"Error fetching statistics: {e}")
             return {}
 
     async def obtener_historial_stock(self, producto_id: int) -> list[dict]:
@@ -44,7 +44,7 @@ class ReportController:
         try:
             return self.db.obtener_historial_stock(producto_id)
         except Exception as e:
-            logger.error(f"Error fetching stock history: {e}")
+            logger.exception(f"Error fetching stock history: {e}")
             return []
 
     async def exportar_csv(self, productos: list[dict] | None = None) -> tuple[bool, str]:
@@ -56,7 +56,7 @@ class ReportController:
             logger.info(f"CSV export completed: {path}")
             return True, str(path)
         except Exception as e:
-            logger.error(f"Error exporting CSV: {e}")
+            logger.exception(f"Error exporting CSV: {e}")
             return False, str(e)
 
     async def exportar_json(self, productos: list[dict] | None = None) -> tuple[bool, str]:
@@ -68,7 +68,7 @@ class ReportController:
             logger.info(f"JSON export completed: {path}")
             return True, str(path)
         except Exception as e:
-            logger.error(f"Error exporting JSON: {e}")
+            logger.exception(f"Error exporting JSON: {e}")
             return False, str(e)
 
     async def exportar_reporte(self) -> tuple[bool, str]:
@@ -79,7 +79,7 @@ class ReportController:
             logger.info(f"Report export completed: {path}")
             return True, str(path)
         except Exception as e:
-            logger.error(f"Error exporting report: {e}")
+            logger.exception(f"Error exporting report: {e}")
             return False, str(e)
 
     async def exportar_pdf(self, productos: list[dict] | None = None) -> tuple[bool, str]:
@@ -91,7 +91,7 @@ class ReportController:
             logger.info(f"PDF export completed: {path}")
             return True, str(path)
         except Exception as e:
-            logger.error(f"Error exporting PDF: {e}")
+            logger.exception(f"Error exporting PDF: {e}")
             return False, str(e)
 
     async def exportar_xlsx(self, productos: list[dict] | None = None) -> tuple[bool, str]:
@@ -103,7 +103,7 @@ class ReportController:
             logger.info(f"XLSX export completed: {path}")
             return True, str(path)
         except Exception as e:
-            logger.error(f"Error exporting XLSX: {e}")
+            logger.exception(f"Error exporting XLSX: {e}")
             return False, str(e)
 
     # ============ Charts ============
@@ -112,21 +112,21 @@ class ReportController:
         try:
             return self.db.obtener_distribucion_categorias()
         except Exception as e:
-            logger.error(f"Error fetching category distribution: {e}")
+            logger.exception(f"Error fetching category distribution: {e}")
             return []
 
     async def obtener_top_productos_stock(self, limit: int = 10) -> list[dict]:
         try:
             return self.db.obtener_top_productos_por_stock(limit=limit)
         except Exception as e:
-            logger.error(f"Error fetching top products: {e}")
+            logger.exception(f"Error fetching top products: {e}")
             return []
 
     async def obtener_serie_inventario(self, dias: int = 30) -> list[dict]:
         try:
             return self.db.obtener_serie_inventario(dias=dias)
         except Exception as e:
-            logger.error(f"Error fetching inventory series: {e}")
+            logger.exception(f"Error fetching inventory series: {e}")
             return []
 
     # ============ Notifications / Email (F2.3) ============
@@ -136,7 +136,7 @@ class ReportController:
         try:
             return get_smtp_config(self.db)
         except Exception as e:
-            logger.error(f"Error getting SMTP config: {e}")
+            logger.exception(f"Error getting SMTP config: {e}")
             return {}
 
     @require_permission(Perm.NOTIFICACIONES_CONFIGURAR)
@@ -155,7 +155,7 @@ class ReportController:
                     self.db.guardar_config(key, str(config[key]))
             return True
         except Exception as e:
-            logger.error(f"Error saving SMTP config: {e}")
+            logger.exception(f"Error saving SMTP config: {e}")
             return False
 
     @require_permission(Perm.NOTIFICACIONES_CONFIGURAR)
@@ -164,7 +164,7 @@ class ReportController:
         try:
             return send_low_stock_alert(self.db)
         except Exception as e:
-            logger.error(f"Error sending stock alert: {e}")
+            logger.exception(f"Error sending stock alert: {e}")
             return {"sent": False, "reason": str(e)}
 
     async def verificar_stock_bajo(self) -> list[dict]:
@@ -172,5 +172,5 @@ class ReportController:
         try:
             return self.db.obtener_productos_stock_bajo()
         except Exception as e:
-            logger.error(f"Error checking low stock: {e}")
+            logger.exception(f"Error checking low stock: {e}")
             return []

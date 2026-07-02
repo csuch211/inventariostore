@@ -1,0 +1,26 @@
+{
+  "name": "inventariostore",
+  "version": "1.0.0",
+  "description": "Run as a desktop app:",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/csuch211/inventariostore.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/csuch211/inventariostore/issues"
+  },
+  "homepage": "https://github.com/csuch211/inventariostore#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.0.1"
+  },
+  "dependencies": {
+    "npx": "^10.2.2"
+  }
+}

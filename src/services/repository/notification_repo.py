@@ -1,5 +1,6 @@
 """Notifications repository for notification management."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -167,7 +168,7 @@ class NotificationRepository(BaseRepository):
                         WHERE {where_clause}
                         ORDER BY creado_en DESC
                         LIMIT ?""",
-                    params + [limit],
+                    [*params, limit],
                 )
                 return [dict(r) for r in cursor.fetchall()]
         except sqlite3.Error as e:
@@ -190,13 +191,20 @@ class NotificationRepository(BaseRepository):
         """Mark all notifications as read. Returns count."""
         try:
             with self._get_connection() as conn:
-                where = "destinatario = ?" if destinatario else "1=1"
-                params = [destinatario] if destinatario else []
-                cursor = conn.execute(
-                    f"""UPDATE notificaciones SET estado = 'leido', leido_en = ?
-                        WHERE {where} AND estado != 'leido'""",
-                    [datetime.now().isoformat()] + params,
-                )
+                params = [datetime.now().isoformat()]
+                if destinatario:
+                    params.append(destinatario)
+                    cursor = conn.execute(
+                        """UPDATE notificaciones SET estado = 'leido', leido_en = ?
+                            WHERE destinatario = ? AND estado != 'leido'""",
+                        params,
+                    )
+                else:
+                    cursor = conn.execute(
+                        """UPDATE notificaciones SET estado = 'leido', leido_en = ?
+                            WHERE estado != 'leido'""",
+                        params,
+                    )
                 conn.commit()
                 return cursor.rowcount
         except sqlite3.Error as e:

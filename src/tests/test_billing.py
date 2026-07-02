@@ -55,9 +55,9 @@ class TestInvoiceRepository:
     @pytest.mark.asyncio
     async def test_obtener_factura(self, ctrl):
         """Test fetching an invoice."""
-        ok, client = await ctrl.crear_cliente("Fetch Client")
+        _, client = await ctrl.crear_cliente("Fetch Client")
         items = [{"producto_id": None, "descripcion": "Item", "cantidad": 1, "precio_unitario": 25.0}]
-        ok, result = await ctrl.crear_factura(cliente_id=client["id"], items=items)
+        _ok, result = await ctrl.crear_factura(cliente_id=client["id"], items=items)
 
         factura = await ctrl.obtener_factura(result["id"])
         assert factura is not None
@@ -67,7 +67,7 @@ class TestInvoiceRepository:
     @pytest.mark.asyncio
     async def test_obtener_facturas(self, ctrl):
         """Test listing invoices."""
-        ok, client = await ctrl.crear_cliente("List Client")
+        _ok, client = await ctrl.crear_cliente("List Client")
         items = [{"producto_id": None, "descripcion": "Item", "cantidad": 1, "precio_unitario": 10.0}]
         await ctrl.crear_factura(cliente_id=client["id"], items=items)
 
@@ -129,7 +129,7 @@ class TestAccountingController:
             {"cuenta_codigo": "1.1.01", "cuenta_nombre": "Caja", "debito": 50.0, "credito": 0},
             {"cuenta_codigo": "4.1.01", "cuenta_nombre": "Ventas", "debito": 0, "credito": 50.0},
         ]
-        ok, result = await ctrl.crear_asiento(
+        _ok, result = await ctrl.crear_asiento(
             fecha="2026-06-23", descripcion="Fetch test", tipo="venta", movimientos=movimientos
         )
         asiento = await ctrl.obtener_asiento(result["id"])

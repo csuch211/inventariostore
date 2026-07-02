@@ -3,8 +3,11 @@ Configuration settings for the Inventory System
 Follows 12-factor app principles
 """
 
+import logging
 import os
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Project root
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -44,7 +47,7 @@ THEME_WARNING_LIGHT = "#FEF3C7"  # amber-100
 # Light theme — text/UI tokens
 THEME_TEXT_PRIMARY = "#0F172A"  # slate-900 — body text
 THEME_TEXT_SECONDARY = "#475569"  # slate-600 — captions / labels
-THEME_TEXT_MUTED = "#64748B"  # slate-500 — hints
+THEME_TEXT_MUTED = "#475569"  # slate-600 — hints (5.3:1 on slate-100, passes WCAG AA)
 THEME_INPUT_FILL = "#F8FAFC"  # slate-50 — TextField/Dropdown fill
 THEME_TABLE_HEADING = THEME_PRIMARY_COLOR
 THEME_TABLE_ROW = "#FFFFFF"
@@ -84,6 +87,12 @@ THEME_DARK_SCROLLBAR_TRACK = "#0F172A"  # slate-900 — scrollbar track
 THEME_DARK_SUCCESS = "#4ADE80"  # green-400 — brighter on dark
 THEME_DARK_WARNING = "#FBBF24"  # amber-400 — brighter on dark
 THEME_DARK_DANGER = "#F87171"  # red-400 — matches accent
+THEME_DARK_INFO_COLOR = "#22D3EE"  # cyan-400 — brighter on dark
+THEME_DARK_INFO_LIGHT = "#164E63"  # cyan-900 tint
+THEME_DARK_PURPLE_COLOR = "#A78BFA"  # violet-400 — brighter on dark
+THEME_DARK_PURPLE_LIGHT = "#2E1065"  # violet-950 tint
+THEME_DARK_TEAL_COLOR = "#2DD4BF"  # teal-400 — brighter on dark
+THEME_DARK_TEAL_LIGHT = "#134E4A"  # teal-900 tint
 
 # Light theme — companion tokens for parity
 THEME_INPUT_BORDER = "#CBD5E1"  # slate-300 — unfocused border
@@ -97,6 +106,18 @@ THEME_SIDEBAR_BG = "#FFFFFF"  # white — sidebar background in light mode
 THEME_SCROLLBAR = "#94A3B8"  # slate-400 — scrollbar thumb
 THEME_SCROLLBAR_TRACK = "#F1F5F9"  # slate-100 — scrollbar track
 
+# Semantic color tokens (dashboard KPIs, charts, badges)
+THEME_INFO_COLOR = "#0EA5E9"  # cyan-500
+THEME_INFO_LIGHT = "#E0F2FE"  # cyan-100
+THEME_PURPLE_COLOR = "#7C3AED"  # violet-600
+THEME_PURPLE_LIGHT = "#EDE9FE"  # violet-100
+THEME_TEAL_COLOR = "#0F766E"  # teal-700
+THEME_TEAL_LIGHT = "#CCFBF1"  # teal-100
+
+# CORS: comma-separated origins, e.g. "https://app.example.com,https://admin.example.com"
+# Default "*" allows all origins (development only; restrict in production)
+CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",")]
+
 # Security
 SESSION_TIMEOUT_MINUTES = 30
 PASSWORD_MIN_LENGTH = 8
@@ -108,6 +129,11 @@ _jwt_secret = os.getenv("JWT_SECRET_KEY")
 if not _jwt_secret:
     import secrets as _secrets
     _jwt_secret = _secrets.token_hex(32)
+    logger.warning(
+        "JWT_SECRET_KEY no configurada. Usando clave aleatoria. "
+        "Los tokens NO persistirán al reiniciar. "
+        "Configure JWT_SECRET_KEY en el entorno para producción."
+    )
     import warnings as _warnings
     _warnings.warn(
         "JWT_SECRET_KEY not set! Generating random key. "
@@ -125,7 +151,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 ITEMS_PER_PAGE = 50
 
 # Export formats
-EXPORT_FORMATS = ["CSV", "PDF", "Excel"]
+EXPORT_FORMATS = ("CSV", "PDF", "Excel")
 
 # Stock alert thresholds
 # Critical: product is out of stock (cantidad == 0).
@@ -149,9 +175,19 @@ BACKUP_PATH = PROJECT_ROOT / "backups"
 import secrets as _secrets
 
 DEFAULT_ADMIN_USER = os.getenv("INV_ADMIN_USER", "admin")
+if not os.getenv("INV_ADMIN_USER"):
+    logger.warning("Usando usuario admin por defecto ('admin'). Configure INV_ADMIN_USER en producción.")
 DEFAULT_ADMIN_PASSWORD = os.getenv("INV_ADMIN_PASSWORD") or _secrets.token_urlsafe(16)
+if not os.getenv("INV_ADMIN_PASSWORD"):
+    logger.warning("Usando contraseña admin generada aleatoriamente. Configure INV_ADMIN_PASSWORD en producción.")
+    logger.warning("Admin password for this session: %s", DEFAULT_ADMIN_PASSWORD)
 DEFAULT_OPERATOR_USER = os.getenv("INV_OPERATOR_USER", "usuario")
+if not os.getenv("INV_OPERATOR_USER"):
+    logger.warning("Usando usuario operador por defecto ('usuario'). Configure INV_OPERATOR_USER en producción.")
 DEFAULT_OPERATOR_PASSWORD = os.getenv("INV_OPERATOR_PASSWORD") or _secrets.token_urlsafe(16)
+if not os.getenv("INV_OPERATOR_PASSWORD"):
+    logger.warning("Usando contraseña operador generada aleatoriamente. Configure INV_OPERATOR_PASSWORD en producción.")
+    logger.warning("Operator password for this session: %s", DEFAULT_OPERATOR_PASSWORD)
 
 
 def ensure_dirs() -> None:

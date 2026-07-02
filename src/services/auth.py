@@ -18,8 +18,9 @@ JWT support:
 
 import hashlib
 import hmac
+import os
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 
@@ -37,8 +38,8 @@ logger = setup_logger(__name__)
 
 # Legacy hardcoded salt, kept only for backward compatibility with the
 # passwords hashed before this refactor (e.g. admin/Admin123).
-_LEGACY_SALT = "inventario2024"
-_PBKDF2_ITERATIONS = 100_000
+_LEGACY_SALT = os.getenv("LEGACY_SALT", "inventario2024")
+_PBKDF2_ITERATIONS = 310_000
 _HASH_ALGO = "sha256"
 
 
@@ -71,6 +72,7 @@ def _verify_new_format(stored: str, password: str) -> bool:
 
 def _verify_legacy(stored: str, password: str) -> bool:
     """Verify against the legacy hardcoded salt. Returns True on match."""
+    logger.warning("User authenticated with legacy salt - consider updating the password")
     candidate = _hash_with_salt(password, _LEGACY_SALT)
     return hmac.compare_digest(stored, candidate)
 
@@ -81,6 +83,30 @@ class AuthService:
     def __init__(self, db=None):
         self.sessions: dict[str, dict] = {}
         self._db = db
+
+    def _clean_expired_sessions(self):
+        """Remove expired sessions from memory."""
+        now = datetime.now()
+        expired = [t for t, s in self.sessions.items() if now > s["expires_at"]]
+        for t in expired:
+            del self.sessions[t]
+        if expired:
+            logger.debug(f"Cleaned {len(expired)} expired session(s)")
+
+    def _audit_auth_event(self, username: str, action: str, details: str) -> None:
+        """Write an audit log entry for authentication events."""
+        if not self._db:
+            return
+        try:
+            with self._db._get_connection() as conn:
+                conn.execute(
+                    """INSERT INTO auditoria (accion, tabla, registro_id, usuario, detalles, creado_en)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (action, "usuarios", 0, username, details, datetime.now().isoformat()),
+                )
+                conn.commit()
+        except Exception as e:
+            logger.warning(f"Failed to write auth audit log: {e}")
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -108,18 +134,21 @@ class AuthService:
             Dict with token, username, expires_in, rol (str), permissions (list).
             Raises AuthenticationException on failure.
         """
+        self._clean_expired_sessions()
         if not username or not password:
             logger.warning("Authentication attempt with empty credentials")
             raise AuthenticationException("Username and password required")
 
         user = self._db.obtener_usuario_por_username_full(username) if self._db else None
         if not user:
-            logger.warning(f"Authentication failed: user {username} not found")
+            logger.warning(f"Authentication failed for user {username}")
+            self._audit_auth_event(username, "LOGIN_FAILED", "Usuario no encontrado")
             raise AuthenticationException("Invalid credentials")
 
         stored_hash = user["password_hash"]
         if not self.verify_password(stored_hash, password):
-            logger.warning(f"Authentication failed: wrong password for {username}")
+            logger.warning(f"Authentication failed for user {username}")
+            self._audit_auth_event(username, "LOGIN_FAILED", "Contraseña incorrecta")
             raise AuthenticationException("Invalid credentials")
 
         rol, permissions = self._resolve_role_and_permissions(username)
@@ -140,6 +169,20 @@ class AuthService:
 
         self.sessions[session_token] = session_data
         logger.info(f"User {username} authenticated as '{rol}' with {len(permissions)} permissions")
+
+        # Audit log for successful login
+        if self._db:
+            try:
+                with self._db._get_connection() as conn:
+                    conn.execute(
+                        """INSERT INTO auditoria (accion, tabla, registro_id, usuario, detalles, creado_en)
+                           VALUES (?, ?, ?, ?, ?, ?)""",
+                        ("LOGIN", "usuarios", user["id"], username,
+                         f"Login exitoso como {rol}", datetime.now().isoformat()),
+                    )
+                    conn.commit()
+            except Exception as e:
+                logger.warning(f"Failed to write login audit log: {e}")
 
         return {
             "token": session_token,
@@ -167,15 +210,23 @@ class AuthService:
 
     def validate_session(self, token: str) -> bool:
         """Validate if session is active"""
+        self._clean_expired_sessions()
         if token not in self.sessions:
             return False
 
         session = self.sessions[token]
-        if datetime.now() > session["expires_at"]:
+        now = datetime.now()
+        if now > session["expires_at"]:
             del self.sessions[token]
             return False
 
-        session["last_activity"] = datetime.now()
+        # Auto-renew session if less than 5 minutes remain
+        remaining = (session["expires_at"] - now).total_seconds()
+        if remaining < 300:
+            session["expires_at"] = now + timedelta(minutes=SESSION_TIMEOUT_MINUTES)
+            logger.debug(f"Auto-renewed session for {session['username']}")
+
+        session["last_activity"] = now
         return True
 
     def logout(self, token: str):
@@ -205,7 +256,7 @@ class AuthService:
 
     def create_access_token(self, username: str, rol: str, permissions: list) -> str:
         """Create a short-lived JWT access token."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": username,
             "rol": rol,
@@ -218,7 +269,7 @@ class AuthService:
 
     def create_refresh_token(self, username: str, user_id: int) -> str:
         """Create a long-lived refresh token and store it in DB."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         jti = secrets.token_hex(16)
         expires_at = now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
 
@@ -316,7 +367,7 @@ class AuthService:
         # Hash the token for storage (never store raw tokens)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(hours=1)  # Token expires in 1 hour
 
         try:
@@ -362,7 +413,7 @@ class AuthService:
 
                 # Check expiry
                 expires_at = datetime.fromisoformat(row["expires_at"])
-                if datetime.now(timezone.utc) > expires_at:
+                if datetime.now(UTC) > expires_at:
                     logger.debug("Password reset token expired")
                     return None
 
@@ -394,7 +445,7 @@ class AuthService:
                 # Update the password
                 conn.execute(
                     "UPDATE usuarios SET password_hash = ?, actualizado_en = ? WHERE id = ?",
-                    (password_hash, datetime.now(timezone.utc).isoformat(), token_info["user_id"]),
+                    (password_hash, datetime.now(UTC).isoformat(), token_info["user_id"]),
                 )
                 # Mark the token as used
                 conn.execute(
@@ -421,7 +472,7 @@ class AuthService:
         # Hash the token for storage
         token_hash = hashlib.sha256(token.encode()).hexdigest()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(hours=24)  # Token expires in 24 hours
 
         try:
@@ -467,7 +518,7 @@ class AuthService:
 
                 # Check expiry
                 expires_at = datetime.fromisoformat(row["expires_at"])
-                if datetime.now(timezone.utc) > expires_at:
+                if datetime.now(UTC) > expires_at:
                     logger.debug("Email verification token expired")
                     return None
 
@@ -501,7 +552,7 @@ class AuthService:
                 # Activate the user account
                 conn.execute(
                     "UPDATE usuarios SET activo = 1, actualizado_en = ? WHERE id = ?",
-                    (datetime.now(timezone.utc).isoformat(), token_info["user_id"]),
+                    (datetime.now(UTC).isoformat(), token_info["user_id"]),
                 )
                 # Mark the token as used
                 conn.execute(

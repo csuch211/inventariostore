@@ -123,7 +123,7 @@ class XLSXExport(ExportStrategy):
     def export(self, data: list[dict], path: Path) -> Path:
         try:
             from openpyxl import Workbook
-            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.styles import Font, PatternFill
         except ImportError:
             raise ImportError("openpyxl is required for XLSX export")
 

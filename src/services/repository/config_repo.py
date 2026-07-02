@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
+from utils.crypto import ENCRYPTED_PREFIX, SECRET_KEYS, decrypt_value, encrypt_value
 from utils.exceptions import DatabaseException
 from utils.logger import setup_logger
 
@@ -18,11 +19,18 @@ class ConfigRepository(BaseRepository):
             with self._get_connection() as conn:
                 cursor = conn.execute("SELECT valor FROM configuracion WHERE clave = ?", (clave,))
                 row = cursor.fetchone()
-                return row["valor"] if row else default
+                if row is None:
+                    return default
+                valor = row["valor"]
+                if clave in SECRET_KEYS and valor:
+                    return decrypt_value(valor)
+                return valor
         except sqlite3.Error:
             return default
 
     def guardar_config(self, clave: str, valor: str) -> None:
+        if clave in SECRET_KEYS and valor and not valor.startswith(ENCRYPTED_PREFIX):
+            valor = encrypt_value(valor)
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:

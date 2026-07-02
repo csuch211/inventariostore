@@ -68,8 +68,8 @@ def calcular_costo_promedio(lotes: list[dict], cantidad_solicitada: int) -> tupl
     Returns:
         Tuple of (total_cost, remaining_quantity).
     """
-    total_value = sum(l.get("cantidad_actual", 0) * l.get("precio", 0) for l in lotes)
-    total_qty = sum(l.get("cantidad_actual", 0) for l in lotes)
+    total_value = sum(lote.get("cantidad_actual", 0) * lote.get("precio", 0) for lote in lotes)
+    total_qty = sum(lote.get("cantidad_actual", 0) for lote in lotes)
 
     if total_qty == 0:
         return 0.0, cantidad_solicitada

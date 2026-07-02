@@ -4,6 +4,8 @@ Product controller for CRUD, categories, suppliers, barcodes/QR, and import oper
 
 import asyncio
 
+_background_tasks: set[asyncio.Task] = set()
+
 from services.auth import AuthService
 from services.code_handler import CodeHandler
 from services.database import DatabaseManager
@@ -64,6 +66,11 @@ class ProductController:
             if not is_valid:
                 return False, {"error": error}
 
+            if descripcion:
+                is_valid, error = Validator.validate_descripcion(descripcion)
+                if not is_valid:
+                    return False, {"error": error}
+
             is_valid, error = Validator.validate_cantidad(stock_min)
             if not is_valid:
                 return False, {"error": "Stock mínimo inválido"}
@@ -83,10 +90,12 @@ class ProductController:
             )
 
             logger.info(f"Product created: {codigo}")
-            asyncio.create_task(self.generar_codigos_producto(codigo))
+            task = asyncio.create_task(self.generar_codigos_producto(codigo))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
             return True, producto
         except Exception as e:
-            logger.error(f"Error creating product: {e}")
+            logger.exception(f"Error creating product: {e}")
             return False, {"error": str(e)}
 
     async def obtener_todos_productos(self) -> list[dict]:
@@ -94,7 +103,7 @@ class ProductController:
         try:
             return self.db.obtener_todos_productos()
         except Exception as e:
-            logger.error(f"Error fetching products: {e}")
+            logger.exception(f"Error fetching products: {e}")
             return []
 
     async def obtener_producto(self, producto_id: int) -> dict | None:
@@ -102,7 +111,7 @@ class ProductController:
         try:
             return self.db.obtener_producto_por_id(producto_id)
         except Exception as e:
-            logger.error(f"Error fetching product: {e}")
+            logger.exception(f"Error fetching product: {e}")
             return None
 
     async def buscar_productos(self, query: str) -> list[dict]:
@@ -113,7 +122,7 @@ class ProductController:
 
             return self.db.buscar_productos(query)
         except Exception as e:
-            logger.error(f"Error searching products: {e}")
+            logger.exception(f"Error searching products: {e}")
             return []
 
     @require_permission(Perm.PRODUCTOS_ACTUALIZAR)
@@ -132,14 +141,20 @@ class ProductController:
         """Update product"""
         try:
             # Validate optional inputs
-            if cantidad and not Validator.validate_cantidad(cantidad)[0]:
-                return False, {"error": "Cantidad inválida"}
+            if cantidad is not None and cantidad != "":
+                ok, err = Validator.validate_cantidad(cantidad)
+                if not ok:
+                    return False, {"error": f"Cantidad inválida: {err}"}
 
-            if precio and not Validator.validate_precio(precio)[0]:
-                return False, {"error": "Precio inválido"}
+            if precio is not None and precio != "":
+                ok, err = Validator.validate_precio(precio)
+                if not ok:
+                    return False, {"error": f"Precio inválido: {err}"}
 
-            if stock_min and not Validator.validate_cantidad(stock_min)[0]:
-                return False, {"error": "Stock mínimo inválido"}
+            if stock_min is not None and stock_min != "":
+                ok, err = Validator.validate_cantidad(stock_min)
+                if not ok:
+                    return False, {"error": f"Stock mínimo inválido: {err}"}
 
             producto = self.db.actualizar_producto(
                 producto_id=producto_id,
@@ -156,10 +171,12 @@ class ProductController:
             logger.info(f"Product {producto_id} updated")
             codigo = producto.get("codigo", "")
             if codigo:
-                asyncio.create_task(self.generar_codigos_producto(codigo))
+                task = asyncio.create_task(self.generar_codigos_producto(codigo))
+                _background_tasks.add(task)
+                task.add_done_callback(_background_tasks.discard)
             return True, producto
         except Exception as e:
-            logger.error(f"Error updating product: {e}")
+            logger.exception(f"Error updating product: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.STOCK_ACTUALIZAR)
@@ -187,7 +204,7 @@ class ProductController:
             logger.info(f"Stock updated for product {producto_id}")
             return True, producto
         except Exception as e:
-            logger.error(f"Error updating stock: {e}")
+            logger.exception(f"Error updating stock: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.PRODUCTOS_ELIMINAR)
@@ -201,7 +218,7 @@ class ProductController:
             logger.info(f"Product {producto_id} deleted")
             return True, {"message": "Producto eliminado"}
         except Exception as e:
-            logger.error(f"Error deleting product: {e}")
+            logger.exception(f"Error deleting product: {e}")
             return False, {"error": str(e)}
 
     # ============ Barcode / QR Scanner ============
@@ -218,7 +235,7 @@ class ProductController:
             logger.info(f"Codes generated for {codigo}")
             return result
         except Exception as e:
-            logger.error(f"Error generating codes for {codigo}: {e}")
+            logger.exception(f"Error generating codes for {codigo}: {e}")
             return {"barcode": None, "qr": None}
 
     async def regenerar_codigos_todos(self) -> tuple[int, int, list[str]]:
@@ -251,7 +268,7 @@ class ProductController:
                 return CodeHandler.imagen_a_base64(path)
             return None
         except Exception as e:
-            logger.error(f"Error getting barcode base64: {e}")
+            logger.exception(f"Error getting barcode base64: {e}")
             return None
 
     async def obtener_qr_base64(self, codigo: str) -> str | None:
@@ -262,7 +279,7 @@ class ProductController:
                 return CodeHandler.imagen_a_base64(path)
             return None
         except Exception as e:
-            logger.error(f"Error getting QR base64: {e}")
+            logger.exception(f"Error getting QR base64: {e}")
             return None
 
     async def buscar_por_codigo_escaneado(self, data: str) -> dict | None:
@@ -279,7 +296,7 @@ class ProductController:
                 return productos[0]
             return None
         except Exception as e:
-            logger.error(f"Error searching by scanned code: {e}")
+            logger.exception(f"Error searching by scanned code: {e}")
             return None
 
     async def escanear_desde_imagen(self, ruta_imagen: str) -> dict | None:
@@ -290,7 +307,7 @@ class ProductController:
                 return None
             return await self.buscar_por_codigo_escaneado(code_data)
         except Exception as e:
-            logger.error(f"Error scanning image: {e}")
+            logger.exception(f"Error scanning image: {e}")
             return None
 
     async def scanner_disponibilidad(self) -> dict:
@@ -303,7 +320,7 @@ class ProductController:
         try:
             return self.db.obtener_categorias()
         except Exception as e:
-            logger.error(f"Error fetching categories: {e}")
+            logger.exception(f"Error fetching categories: {e}")
             return []
 
     @require_permission(Perm.CATEGORIAS_GESTIONAR)
@@ -320,7 +337,7 @@ class ProductController:
             logger.info(f"Category created: {nombre}")
             return True, {"id": categoria_id, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error creating category: {e}")
+            logger.exception(f"Error creating category: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CATEGORIAS_GESTIONAR)
@@ -340,7 +357,7 @@ class ProductController:
             logger.info(f"Category {categoria_id} updated")
             return True, {"id": categoria_id, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error updating category: {e}")
+            logger.exception(f"Error updating category: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CATEGORIAS_GESTIONAR)
@@ -353,7 +370,7 @@ class ProductController:
             logger.info(f"Category {categoria_id} deleted")
             return True, {"message": "Categoria eliminada"}
         except Exception as e:
-            logger.error(f"Error deleting category: {e}")
+            logger.exception(f"Error deleting category: {e}")
             return False, {"error": str(e)}
 
     async def seed_categorias_iniciales(self, nombres: list[str]) -> int:
@@ -364,7 +381,7 @@ class ProductController:
                 usuario=self.current_user or "system",
             )
         except Exception as e:
-            logger.error(f"Error seeding categories: {e}")
+            logger.exception(f"Error seeding categories: {e}")
             return 0
 
     # ============ Proveedores ============
@@ -373,7 +390,7 @@ class ProductController:
         try:
             return self.db.obtener_proveedores()
         except Exception as e:
-            logger.error(f"Error fetching suppliers: {e}")
+            logger.exception(f"Error fetching suppliers: {e}")
             return []
 
     @require_permission(Perm.PROVEEDORES_GESTIONAR)
@@ -388,6 +405,10 @@ class ProductController:
         is_valid, error = Validator.validate_nombre(nombre)
         if not is_valid:
             return False, {"error": error}
+        if telefono:
+            is_valid, error = Validator.validate_telefono(telefono)
+            if not is_valid:
+                return False, {"error": error}
         if email:
             is_valid, error = Validator.validate_email(email)
             if not is_valid:
@@ -404,7 +425,7 @@ class ProductController:
             logger.info(f"Supplier created: {nombre}")
             return True, {"id": proveedor_id, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error creating supplier: {e}")
+            logger.exception(f"Error creating supplier: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.PROVEEDORES_GESTIONAR)
@@ -437,7 +458,7 @@ class ProductController:
             logger.info(f"Supplier {proveedor_id} updated")
             return True, {"id": proveedor_id, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error updating supplier: {e}")
+            logger.exception(f"Error updating supplier: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.PROVEEDORES_GESTIONAR)
@@ -450,7 +471,7 @@ class ProductController:
             logger.info(f"Supplier {proveedor_id} deleted")
             return True, {"message": "Proveedor eliminado"}
         except Exception as e:
-            logger.error(f"Error deleting supplier: {e}")
+            logger.exception(f"Error deleting supplier: {e}")
             return False, {"error": str(e)}
 
     # ============ Ordenes de compra ============
@@ -459,7 +480,7 @@ class ProductController:
         try:
             return self.db.obtener_ordenes_compra(estado=estado)
         except Exception as e:
-            logger.error(f"Error fetching orders: {e}")
+            logger.exception(f"Error fetching orders: {e}")
             return []
 
     @require_permission(Perm.ORDENES_CREAR)
@@ -478,7 +499,7 @@ class ProductController:
             logger.info(f"Order {orden_id} created")
             return True, {"id": orden_id}
         except Exception as e:
-            logger.error(f"Error creating order: {e}")
+            logger.exception(f"Error creating order: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_RECIBIR)
@@ -506,7 +527,7 @@ class ProductController:
             logger.info(f"Order {orden_id} received, stock updated")
             return True, {"message": "Orden recibida y stock actualizado"}
         except Exception as e:
-            logger.error(f"Error receiving order: {e}")
+            logger.exception(f"Error receiving order: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_CANCELAR)
@@ -520,7 +541,7 @@ class ProductController:
             logger.info(f"Order {orden_id} cancelled")
             return True, {"message": "Orden cancelada"}
         except Exception as e:
-            logger.error(f"Error cancelling order: {e}")
+            logger.exception(f"Error cancelling order: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_CANCELAR)
@@ -532,7 +553,7 @@ class ProductController:
             )
             return True, {"message": "Orden eliminada"}
         except Exception as e:
-            logger.error(f"Error deleting order: {e}")
+            logger.exception(f"Error deleting order: {e}")
             return False, {"error": str(e)}
 
     # ============ CSV Import ============
@@ -552,7 +573,7 @@ class ProductController:
                 ),
             )
         except Exception as e:
-            logger.error(f"Error importing CSV: {e}")
+            logger.exception(f"Error importing CSV: {e}")
             return 0, [str(e)]
 
     async def importar_productos_xlsx(self, filepath: str) -> tuple[int, list[str]]:
@@ -569,5 +590,5 @@ class ProductController:
                 ),
             )
         except Exception as e:
-            logger.error(f"Error importing XLSX: {e}")
+            logger.exception(f"Error importing XLSX: {e}")
             return 0, [str(e)]

@@ -26,9 +26,9 @@ from types import SimpleNamespace
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
-import flet as ft  # noqa: E402
+import flet as ft
 
-from ui.components import (  # noqa: E402
+from ui.components import (
     SidebarItem,
     SidebarSearch,
     SidebarSection,

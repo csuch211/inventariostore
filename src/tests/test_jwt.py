@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -13,6 +13,22 @@ from config.settings import (
     REFRESH_TOKEN_EXPIRE_DAYS,
 )
 from services.auth import AuthService
+
+
+def _clear_smtp_config(ctrl):
+    """Clear SMTP config keys from the shared database."""
+    for key in ("smtp_host", "smtp_port", "smtp_user", "smtp_password",
+                "smtp_from_email", "smtp_to_email", "notify_low_stock"):
+        with ctrl.db._get_connection() as conn:
+            conn.execute("DELETE FROM configuracion WHERE clave = ?", (key,))
+
+
+def _restore_admin_password(ctrl):
+    """Restore admin password to 'Admin123' after a password-reset test."""
+    from services.auth import AuthService
+    hashed = AuthService.hash_password("Admin123")
+    with ctrl.db._get_connection() as conn:
+        conn.execute("UPDATE usuarios SET password_hash = ? WHERE username = ?", (hashed, "admin"))
 
 
 @pytest.fixture
@@ -71,7 +87,7 @@ class TestJWTAccessTokens:
         # Create a token with expired time
         import jwt
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": "admin",
             "rol": "admin",
@@ -88,7 +104,7 @@ class TestJWTAccessTokens:
         # Create a refresh token and try to verify as access
         import jwt
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": "admin",
             "jti": "test123",
@@ -103,7 +119,7 @@ class TestJWTAccessTokens:
     def test_verify_access_token_invalid_signature(self, auth_service):
         import jwt
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": "admin",
             "rol": "admin",
@@ -150,7 +166,7 @@ class TestJWTRefreshTokens:
     def test_verify_refresh_token_expired(self, auth_service):
         import jwt
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": "admin",
             "jti": "expired-token",
@@ -312,6 +328,8 @@ class TestPasswordReset:
         # Verify new password works
         assert AuthService.verify_password(user["password_hash"], "NewSecurePass1") is True
 
+        _restore_admin_password(ctrl)
+
     def test_reset_password_invalid_token(self, ctrl):
         """Test resetting password with invalid token fails."""
         from services.auth import AuthService
@@ -334,6 +352,8 @@ class TestPasswordReset:
         # Try to reuse token
         success2 = auth_svc.reset_password(token, "AnotherPass1")
         assert success2 is False
+
+        _restore_admin_password(ctrl)
 
     def test_reset_password_invalidates_old_tokens(self, ctrl):
         """Test that creating a new reset token invalidates old ones."""
@@ -511,3 +531,5 @@ class TestSMTPConfig:
         config = asyncio.run(get_smtp_config_endpoint(user="admin"))
         assert config["host"] == "smtp.gmail.com"
         assert config["enabled"] is True
+
+        _clear_smtp_config(ctrl)

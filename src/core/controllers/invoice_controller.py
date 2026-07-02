@@ -49,7 +49,7 @@ class InvoiceController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating invoice: {e}")
+            logger.exception(f"Error creating invoice: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.FACTURAS_LEER)
@@ -58,7 +58,7 @@ class InvoiceController:
         try:
             return self.db.invoice_repo.obtener_factura(factura_id)
         except Exception as e:
-            logger.error(f"Error fetching invoice: {e}")
+            logger.exception(f"Error fetching invoice: {e}")
             return None
 
     @require_permission(Perm.FACTURAS_LEER)
@@ -69,7 +69,7 @@ class InvoiceController:
         try:
             return self.db.invoice_repo.obtener_facturas(estado=estado, cliente_id=cliente_id)
         except Exception as e:
-            logger.error(f"Error fetching invoices: {e}")
+            logger.exception(f"Error fetching invoices: {e}")
             return []
 
     @require_permission(Perm.FACTURAS_CANCELAR)
@@ -79,7 +79,7 @@ class InvoiceController:
             self.db.invoice_repo.eliminar_factura(factura_id, usuario=self.current_user or "system")
             return True, {"message": "Invoice cancelled"}
         except Exception as e:
-            logger.error(f"Error cancelling invoice: {e}")
+            logger.exception(f"Error cancelling invoice: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.FACTURAS_CREAR)
@@ -109,5 +109,5 @@ class InvoiceController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating invoice from sale: {e}")
+            logger.exception(f"Error creating invoice from sale: {e}")
             return False, {"error": str(e)}

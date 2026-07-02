@@ -1,5 +1,6 @@
 """HR repository for payroll, attendance, vacations, and evaluations."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -61,6 +62,12 @@ class HRRepository(BaseRepository):
                     where.append("n.periodo_inicio <= ? AND n.periodo_fin >= ?")
                     params.extend([periodo, periodo])
 
+                _allowed_columns = {"n.empleado_id", "n.periodo_inicio", "n.periodo_fin"}
+                for clause in where:
+                    for part in clause.split(" AND "):
+                        col = part.strip().split(None, 1)[0]
+                        if col not in _allowed_columns:
+                            raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT n.*, e.nombre, e.apellido, e.numero_empleado
@@ -100,7 +107,7 @@ class HRRepository(BaseRepository):
         usuario: str = "system",
     ) -> dict:
         """Register attendance for an employee."""
-        now = datetime.now().isoformat()
+        datetime.now().isoformat()
 
         # Calculate hours worked
         horas_trabajadas = 0
@@ -148,6 +155,11 @@ class HRRepository(BaseRepository):
                     where.append("a.fecha <= ?")
                     params.append(fecha_fin)
 
+                _allowed_columns = {"a.empleado_id", "a.fecha"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT a.*, e.nombre, e.apellido, e.numero_empleado
@@ -225,6 +237,11 @@ class HRRepository(BaseRepository):
                     where.append("v.estado = ?")
                     params.append(estado)
 
+                _allowed_columns = {"v.empleado_id", "v.estado"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT v.*, e.nombre, e.apellido, e.numero_empleado

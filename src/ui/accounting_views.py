@@ -1,4 +1,4 @@
-"""Accounting views for double-entry bookkeeping.
+"""Accounting views for double-entry bookkeeping, refactored for clarity.
 
 Provides UI for journal entries, chart of accounts, and trial balance.
 """
@@ -7,19 +7,19 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
 
-
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
 
 
 # ============ Asientos Contables ============
@@ -27,13 +27,14 @@ def _fmt_money(v) -> str:
 
 async def show_asientos(app):
     """Display journal entries view."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             asientos = await controller.obtener_asientos()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener asientos: %s", e)
             asientos = []
 
         rows = []
@@ -176,7 +177,7 @@ async def show_asientos(app):
 
 async def show_plan_cuentas(app):
     """Display chart of accounts view."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     tipo_filter = ft.Dropdown(
@@ -200,7 +201,8 @@ async def show_plan_cuentas(app):
         tipo = tipo_filter.value or None
         try:
             cuentas = await controller.obtener_plan_cuentas(tipo=tipo)
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener plan de cuentas: %s", e)
             cuentas = []
 
         rows = []
@@ -268,13 +270,14 @@ async def show_plan_cuentas(app):
 
 async def show_balance(app):
     """Display trial balance view."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             balance = await controller.obtener_balance_comprobacion()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener balance de comprobación: %s", e)
             balance = []
 
         total_debito = sum(b.get("total_debito", 0) for b in balance)

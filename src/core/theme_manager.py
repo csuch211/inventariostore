@@ -18,9 +18,12 @@ the default fill of an exported PDF report).
 
 from __future__ import annotations
 
+import logging
 from typing import Literal
 
 import flet as ft
+
+logger = logging.getLogger(__name__)
 
 from config.settings import (
     THEME_ACCENT_COLOR,
@@ -34,21 +37,29 @@ from config.settings import (
     THEME_DARK_DIVIDER,
     THEME_DARK_FOCUS_RING,
     THEME_DARK_HOVER_TINT,
+    THEME_DARK_INFO_COLOR,
+    THEME_DARK_INFO_LIGHT,
     THEME_DARK_INPUT_BORDER,
     THEME_DARK_INPUT_FILL,
     THEME_DARK_OVERLAY,
     THEME_DARK_PRIMARY_COLOR,
     THEME_DARK_PRIMARY_LIGHT,
+    THEME_DARK_PRIMARY_TINT,
+    THEME_DARK_PURPLE_COLOR,
+    THEME_DARK_PURPLE_LIGHT,
     THEME_DARK_SCROLLBAR,
     THEME_DARK_SCROLLBAR_TRACK,
     THEME_DARK_SHADOW,
     THEME_DARK_SHADOW_STRONG,
+    THEME_DARK_SIDEBAR_BG,
     THEME_DARK_SUCCESS,
     THEME_DARK_SURFACE_COLOR,
     THEME_DARK_TABLE_HEADING,
     THEME_DARK_TABLE_ROW,
     THEME_DARK_TABLE_ROW_ALT,
     THEME_DARK_TABLE_ROW_HOVER,
+    THEME_DARK_TEAL_COLOR,
+    THEME_DARK_TEAL_LIGHT,
     THEME_DARK_TEXT_MUTED,
     THEME_DARK_TEXT_PRIMARY,
     THEME_DARK_TEXT_SECONDARY,
@@ -56,22 +67,30 @@ from config.settings import (
     THEME_DIVIDER,
     THEME_FOCUS_RING,
     THEME_HOVER_TINT,
+    THEME_INFO_COLOR,
+    THEME_INFO_LIGHT,
     THEME_INPUT_BORDER,
     THEME_INPUT_FILL,
     THEME_OVERLAY,
     THEME_PRIMARY_COLOR,
     THEME_PRIMARY_DARK,
     THEME_PRIMARY_LIGHT,
+    THEME_PRIMARY_TINT,
+    THEME_PURPLE_COLOR,
+    THEME_PURPLE_LIGHT,
     THEME_SCROLLBAR,
     THEME_SCROLLBAR_TRACK,
     THEME_SHADOW,
     THEME_SHADOW_STRONG,
+    THEME_SIDEBAR_BG,
     THEME_SUCCESS_COLOR,
     THEME_SURFACE_COLOR,
     THEME_TABLE_HEADING,
     THEME_TABLE_ROW,
     THEME_TABLE_ROW_ALT,
     THEME_TABLE_ROW_HOVER,
+    THEME_TEAL_COLOR,
+    THEME_TEAL_LIGHT,
     THEME_TEXT_MUTED,
     THEME_TEXT_PRIMARY,
     THEME_TEXT_SECONDARY,
@@ -114,7 +133,7 @@ class ThemeManager:
                 self._system_is_dark = str(pb).lower() == "dark"
                 return self._system_is_dark
         except Exception:
-            pass
+            logger.debug("Could not detect system brightness, defaulting to light")
         # Fallback: assume light. We deliberately do NOT guess based on
         # OS name — Windows registry / macOS defaults differ between
         # versions and we have no portable, dependency-free way to read
@@ -147,15 +166,30 @@ class ThemeManager:
 
     # ---------- palettes ----------
 
-    @staticmethod
-    def palette(mode: ft.ThemeMode | None) -> Palette:
+    _palette_cache: dict[ft.ThemeMode | None, Palette] | None = None
+
+    @classmethod
+    def palette(
+        cls,
+        mode: ft.ThemeMode | None = None,
+        page: ft.Page | None = None,
+    ) -> Palette:
         """Return the resolved palette for a given Flet ThemeMode.
 
-        When `mode is None` (e.g. during early init before the page has
-        a theme_mode set), we return the light palette as a safe default.
+        When `mode is None` and a `page` is provided, the effective mode is
+        read from ``page.theme_mode``.  When both are ``None`` (e.g. during
+        early init before the page has a theme_mode set), we return the light
+        palette as a safe default.  Results are cached per mode.
         """
+        if mode is None and page is not None:
+            mode = page.theme_mode
+        if cls._palette_cache is None:
+            cls._palette_cache = {}
+        cached = cls._palette_cache.get(mode)
+        if cached is not None:
+            return cached
         if mode == ft.ThemeMode.DARK:
-            return {
+            pal = {
                 "primary": THEME_DARK_PRIMARY_COLOR,
                 "primary_light": THEME_DARK_PRIMARY_LIGHT,
                 "primary_dark": THEME_DARK_PRIMARY_COLOR,
@@ -164,9 +198,13 @@ class ThemeManager:
                 "background": THEME_DARK_BACKGROUND_COLOR,
                 "surface": THEME_DARK_SURFACE_COLOR,
                 "card": THEME_DARK_CARD_COLOR,
+                "sidebar_bg": THEME_DARK_SIDEBAR_BG,
+                "primary_tint": THEME_DARK_PRIMARY_TINT,
+                "hover_tint": THEME_DARK_HOVER_TINT,
                 "text_primary": THEME_DARK_TEXT_PRIMARY,
                 "text_secondary": THEME_DARK_TEXT_SECONDARY,
                 "text_muted": THEME_DARK_TEXT_MUTED,
+                "text_on_input": THEME_DARK_TEXT_PRIMARY,
                 "input_fill": THEME_DARK_INPUT_FILL,
                 "input_border": THEME_DARK_INPUT_BORDER,
                 "table_heading": THEME_DARK_TABLE_HEADING,
@@ -178,14 +216,24 @@ class ThemeManager:
                 "shadow_strong": THEME_DARK_SHADOW_STRONG,
                 "overlay": THEME_DARK_OVERLAY,
                 "focus_ring": THEME_DARK_FOCUS_RING,
-                "hover_tint": THEME_DARK_HOVER_TINT,
+                "cursor": THEME_DARK_FOCUS_RING,
+                "selection": "#1E3A5F",
+                "helper": THEME_DARK_TEXT_SECONDARY,
                 "scrollbar": THEME_DARK_SCROLLBAR,
                 "scrollbar_track": THEME_DARK_SCROLLBAR_TRACK,
                 "success": THEME_DARK_SUCCESS,
                 "warning": THEME_DARK_WARNING,
                 "danger": THEME_DARK_DANGER,
+                "info": THEME_DARK_INFO_COLOR,
+                "info_light": THEME_DARK_INFO_LIGHT,
+                "purple": THEME_DARK_PURPLE_COLOR,
+                "purple_light": THEME_DARK_PURPLE_LIGHT,
+                "teal": THEME_DARK_TEAL_COLOR,
+                "teal_light": THEME_DARK_TEAL_LIGHT,
             }
-        return {
+            cls._palette_cache[ft.ThemeMode.DARK] = pal
+            return pal
+        pal = {
             "primary": THEME_PRIMARY_COLOR,
             "primary_light": THEME_PRIMARY_LIGHT,
             "primary_dark": THEME_PRIMARY_DARK,
@@ -194,9 +242,13 @@ class ThemeManager:
             "background": THEME_BACKGROUND_COLOR,
             "surface": THEME_SURFACE_COLOR,
             "card": THEME_SURFACE_COLOR,
+            "sidebar_bg": THEME_SIDEBAR_BG,
+            "primary_tint": THEME_PRIMARY_TINT,
+            "hover_tint": THEME_HOVER_TINT,
             "text_primary": THEME_TEXT_PRIMARY,
             "text_secondary": THEME_TEXT_SECONDARY,
             "text_muted": THEME_TEXT_MUTED,
+            "text_on_input": THEME_TEXT_PRIMARY,
             "input_fill": THEME_INPUT_FILL,
             "input_border": THEME_INPUT_BORDER,
             "table_heading": THEME_TABLE_HEADING,
@@ -208,13 +260,23 @@ class ThemeManager:
             "shadow_strong": THEME_SHADOW_STRONG,
             "overlay": THEME_OVERLAY,
             "focus_ring": THEME_FOCUS_RING,
-            "hover_tint": THEME_HOVER_TINT,
+            "cursor": THEME_PRIMARY_COLOR,
+            "selection": "#BFDBFE",
+            "helper": THEME_TEXT_SECONDARY,
             "scrollbar": THEME_SCROLLBAR,
             "scrollbar_track": THEME_SCROLLBAR_TRACK,
             "success": THEME_SUCCESS_COLOR,
             "warning": THEME_WARNING_COLOR,
             "danger": THEME_ACCENT_COLOR,
+            "info": THEME_INFO_COLOR,
+            "info_light": THEME_INFO_LIGHT,
+            "purple": THEME_PURPLE_COLOR,
+            "purple_light": THEME_PURPLE_LIGHT,
+            "teal": THEME_TEAL_COLOR,
+            "teal_light": THEME_TEAL_LIGHT,
         }
+        cls._palette_cache[ft.ThemeMode.LIGHT] = pal
+        return pal
 
     # ---------- apply ----------
 

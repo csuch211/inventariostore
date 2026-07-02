@@ -1,5 +1,6 @@
 """Employee repository for HR operations."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -82,6 +83,11 @@ class EmployeeRepository(BaseRepository):
                     where.append("departamento = ?")
                     params.append(departamento)
 
+                _allowed_columns = {"estado", "departamento"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where)
                 cursor = conn.execute(
                     f"SELECT * FROM empleados WHERE {where_clause} ORDER BY apellido, nombre",

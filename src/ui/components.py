@@ -9,29 +9,12 @@ from typing import Any
 
 import flet as ft
 
-from config.settings import (
-    THEME_ACCENT_COLOR,
-    THEME_DARK_ACCENT_COLOR,
-    THEME_DARK_DIVIDER,
-    THEME_DARK_FOCUS_RING,
-    THEME_DARK_INPUT_BORDER,
-    THEME_DARK_INPUT_FILL,
-    THEME_DARK_PRIMARY_COLOR,
-    THEME_DARK_SURFACE_COLOR,
-    THEME_DARK_TABLE_HEADING,
-    THEME_DARK_TABLE_ROW,
-    THEME_DARK_TEXT_MUTED,
-    THEME_DARK_TEXT_PRIMARY,
-    THEME_DARK_TEXT_SECONDARY,
-    THEME_DIVIDER,
-    THEME_INPUT_BORDER,
-    THEME_INPUT_FILL,
-    THEME_PRIMARY_COLOR,
-    THEME_SURFACE_COLOR,
-    THEME_TEXT_MUTED,
-    THEME_TEXT_SECONDARY,
-)
+from core.theme_manager import theme_manager
+from ui.typography import T
 from utils.i18n import available_languages, get_locale, set_locale, t
+from utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 # Module-level reference to the active Page so static helpers (AppHeader,
@@ -45,72 +28,8 @@ class _PageRef:
 
 
 def bind_page(page: ft.Page | None) -> None:
-    """Register the active Page used by static helpers to detect theme mode."""
+    """Register the active Page used by static helpers to resolve theme palette."""
     _PageRef.active = page
-
-
-def _is_dark(page: ft.Page | None = None) -> bool:
-    """Return True if the page is currently in dark theme mode."""
-    p = page or _PageRef.active
-    if p is None:
-        return False
-    try:
-        return p.theme_mode == ft.ThemeMode.DARK
-    except Exception:
-        return False
-
-
-def _resolve_colors(page: ft.Page | None = None, colors: dict | None = None) -> dict:
-    """Merge caller-supplied colors with theme defaults.
-
-    Priority: explicit `colors` arg > page.theme_mode detection > light.
-    """
-    if colors:
-        return colors
-    if _is_dark(page):
-        return {
-            "primary": THEME_DARK_PRIMARY_COLOR,
-            "accent": THEME_DARK_ACCENT_COLOR,
-            "background": "#0F172A",
-            "surface": THEME_DARK_SURFACE_COLOR,
-            "card": "#334155",
-            "text_primary": THEME_DARK_TEXT_PRIMARY,
-            "text_secondary": THEME_DARK_TEXT_SECONDARY,
-            "text_muted": THEME_DARK_TEXT_MUTED,
-            # TextField contrast fixes (dark mode):
-            # - text_on_input: color of the user's input text — must contrast
-            #   with input_fill (#0B1220). slate-100 (≈#F1F5F9) gives 15.4:1.
-            "text_on_input": THEME_DARK_TEXT_PRIMARY,
-            "input_fill": THEME_DARK_INPUT_FILL,
-            "input_border": THEME_DARK_INPUT_BORDER,
-            "focus_ring": THEME_DARK_FOCUS_RING,
-            "cursor": THEME_DARK_FOCUS_RING,
-            "selection": "#1E3A5F",  # blue-900 tint — selected text bg
-            "helper": THEME_DARK_TEXT_SECONDARY,  # visible helper text
-            "table_heading": THEME_DARK_TABLE_HEADING,
-            "table_row": THEME_DARK_TABLE_ROW,
-            "divider": THEME_DARK_DIVIDER,
-        }
-    return {
-        "primary": THEME_PRIMARY_COLOR,
-        "accent": THEME_ACCENT_COLOR,
-        "background": "#F1F5F9",
-        "surface": THEME_SURFACE_COLOR,
-        "card": THEME_SURFACE_COLOR,
-        "text_primary": "#0F172A",
-        "text_secondary": THEME_TEXT_SECONDARY,
-        "text_muted": THEME_TEXT_MUTED,
-        "text_on_input": "#0F172A",
-        "input_fill": THEME_INPUT_FILL,
-        "input_border": THEME_INPUT_BORDER,
-        "focus_ring": THEME_PRIMARY_COLOR,
-        "cursor": THEME_PRIMARY_COLOR,
-        "selection": "#BFDBFE",  # blue-200
-        "helper": THEME_TEXT_SECONDARY,
-        "table_heading": THEME_PRIMARY_COLOR,
-        "table_row": "#FFFFFF",
-        "divider": THEME_DIVIDER,
-    }
 
 
 class AppHeader:
@@ -124,21 +43,14 @@ class AppHeader:
         colors: dict | None = None,
     ) -> ft.Container:
         """Create header with title and subtitle"""
-        c = _resolve_colors(page, colors)
+        c = colors or theme_manager.palette(page=page)
+        from ui.typography import T
+
         return ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Text(
-                        title,
-                        size=32,
-                        weight="bold",
-                        color=c["primary"],
-                    ),
-                    ft.Text(
-                        subtitle,
-                        size=14,
-                        color=c["text_secondary"],
-                    )
+                    T.display(title, page=page),
+                    T.caption(subtitle, page=page)
                     if subtitle
                     else ft.Container(height=0),
                 ],
@@ -159,7 +71,7 @@ class DataTable:
         colors: dict | None = None,
     ) -> ft.DataTable:
         """Create data table from products list"""
-        c = _resolve_colors(page, colors)
+        c = colors or theme_manager.palette(page=page)
         columns = [
             ft.DataColumn(ft.Text("Código", weight="bold")),
             ft.DataColumn(ft.Text("Nombre", weight="bold")),
@@ -178,7 +90,7 @@ class DataTable:
                         ft.DataCell(
                             ft.Text(
                                 str(p.get("cantidad", 0)),
-                                color="blue" if p.get("cantidad", 0) > 0 else "red",
+                                color=c["primary"] if p.get("cantidad", 0) > 0 else c["accent"],
                                 weight="bold",
                             )
                         ),
@@ -228,7 +140,7 @@ class FormField:
         light and dark themes — relying on the global theme color leaves the
         user's typed text invisible against the dark input fill.
         """
-        c = _resolve_colors(page, colors)
+        c = colors or theme_manager.palette(page=page)
         return ft.TextField(
             label=label,
             hint_text=hint,
@@ -265,7 +177,7 @@ class FormField:
         legible in dark mode (otherwise it inherits a near-white on near-black
         contrast from the global theme that fails WCAG on the dark surface).
         """
-        c = _resolve_colors(page, colors)
+        c = colors or theme_manager.palette(page=page)
         return ft.Dropdown(
             label=label,
             options=[ft.dropdown.Option(opt) for opt in options],
@@ -297,6 +209,7 @@ class SnackBarHelper:
     @staticmethod
     def success(page: ft.Page, message: str):
         """Show success notification"""
+        c = theme_manager.palette(page=page)
         SnackBarHelper._show(
             page,
             ft.SnackBar(
@@ -307,13 +220,14 @@ class SnackBarHelper:
                     ],
                     spacing=10,
                 ),
-                bgcolor="green700",
+                bgcolor=c["success"],
             ),
         )
 
     @staticmethod
     def error(page: ft.Page, message: str):
         """Show error notification"""
+        c = theme_manager.palette(page=page)
         SnackBarHelper._show(
             page,
             ft.SnackBar(
@@ -324,13 +238,14 @@ class SnackBarHelper:
                     ],
                     spacing=10,
                 ),
-                bgcolor=THEME_ACCENT_COLOR,
+                bgcolor=c["accent"],
             ),
         )
 
     @staticmethod
     def info(page: ft.Page, message: str):
         """Show info notification"""
+        c = theme_manager.palette(page=page)
         SnackBarHelper._show(
             page,
             ft.SnackBar(
@@ -341,7 +256,25 @@ class SnackBarHelper:
                     ],
                     spacing=10,
                 ),
-                bgcolor="blue700",
+                bgcolor=c["primary"],
+            ),
+        )
+
+    @staticmethod
+    def warning(page: ft.Page, message: str):
+        """Show warning notification"""
+        c = theme_manager.palette(page=page)
+        SnackBarHelper._show(
+            page,
+            ft.SnackBar(
+                ft.Row(
+                    [
+                        ft.Icon(ft.icons.Icons.WARNING_AMBER, color="white"),
+                        ft.Text(message, color="white"),
+                    ],
+                    spacing=10,
+                ),
+                bgcolor=c["warning"],
             ),
         )
 
@@ -358,6 +291,7 @@ class DialogHelper:
         on_no=None,
     ):
         """Show confirmation dialog"""
+        c = theme_manager.palette(page=page)
         dialog = ft.AlertDialog(
             title=ft.Text(title, weight="bold"),
             content=ft.Text(content),
@@ -369,7 +303,7 @@ class DialogHelper:
                 ft.TextButton(
                     content=ft.Text("Aceptar"),
                     on_click=on_yes,
-                    style=ft.ButtonStyle(color=THEME_PRIMARY_COLOR),
+                    style=ft.ButtonStyle(color=c["primary"]),
                 ),
             ],
         )
@@ -389,13 +323,14 @@ class LoadingSpinner:
     """Loading indicator"""
 
     @staticmethod
-    def create() -> ft.Container:
+    def create(page=None) -> ft.Container:
         """Create loading spinner"""
+        c = theme_manager.palette(page=page)
         return ft.Container(
             content=ft.Column(
                 [
-                    ft.ProgressRing(width=40, height=40, stroke_width=4),
-                    ft.Text(t("common.loading"), size=14, color="gray600"),
+                    ft.ProgressRing(width=40, height=40, stroke_width=4, color=c["primary"]),
+                    T.body(t("common.loading"), page=page, color=c["text_muted"]),
                 ],
                 alignment="center",
                 horizontal_alignment="center",
@@ -437,7 +372,8 @@ class LangSwitcher:
             set_locale(lang)
             if controller is not None:
                 usuario = getattr(controller, "current_user", None) or "system"
-                _task = asyncio.create_task(controller.cambiar_idioma(usuario, lang))
+                task = asyncio.create_task(controller.cambiar_idioma(usuario, lang))
+                task.add_done_callback(lambda t: None)
             if on_change:
                 on_change(lang)
 
@@ -467,6 +403,371 @@ class LangSwitcher:
             ),
             padding=ft.Padding(left=10, right=10, top=5, bottom=5),
         )
+
+
+class EmptyState:
+    @staticmethod
+    def create(
+        icon=None,
+        title="Sin datos",
+        description="",
+        action_text=None,
+        on_action=None,
+        page=None,
+    ) -> ft.Container:
+        mode = page.theme_mode if page else None
+        c = theme_manager.palette(mode)
+        controls = []
+        controls.append(
+            ft.Container(
+                content=ft.Icon(
+                    icon or ft.icons.Icons.INBOX_OUTLINED,
+                    size=64,
+                    color=c["text_muted"],
+                ),
+                alignment=ft.alignment.Alignment(0, 0),
+            )
+        )
+        controls.append(
+            ft.Text(
+                title,
+                size=18,
+                weight=ft.FontWeight.SEMI_BOLD,
+                color=c["text_secondary"],
+                text_align=ft.TextAlign.CENTER,
+            )
+        )
+        if description:
+            controls.append(
+                ft.Text(
+                    description,
+                    size=14,
+                    color=c["text_muted"],
+                    text_align=ft.TextAlign.CENTER,
+                )
+            )
+        if action_text and on_action:
+            controls.append(
+                ft.ElevatedButton(
+                    text=action_text,
+                    on_click=on_action,
+                    style=ft.ButtonStyle(
+                        color="white",
+                        bgcolor=c["primary"],
+                    ),
+                )
+            )
+        return ft.Container(
+            content=ft.Column(
+                controls,
+                spacing=12,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            alignment=ft.alignment.Alignment(0, 0),
+            expand=True,
+            padding=40,
+        )
+
+
+class LoadingButton:
+    """Button with built-in loading spinner."""
+
+    @staticmethod
+    def create(
+        text: str,
+        on_click=None,
+        icon=None,
+        variant="primary",  # "primary" | "secondary" | "text"
+        expand=False,
+        page=None,
+    ) -> ft.Container:
+        mode = page.theme_mode if page else None
+        c = theme_manager.palette(mode)
+
+        btn_bg = c["primary"] if variant == "primary" else None
+        btn_color = "white" if variant == "primary" else c["text_primary"]
+
+        spinner = ft.ProgressRing(width=16, height=16, stroke_width=2, color=btn_color, visible=False)
+        text_widget = ft.Text(text, size=14, color=btn_color)
+
+        row = ft.Row(
+            [spinner, text_widget],
+            spacing=8,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+
+        async def _on_click(e):
+            btn = e.control
+            spinner.visible = True
+            text_widget.visible = False
+            btn.disabled = True
+            btn.update()
+            try:
+                if on_click:
+                    await on_click(e)
+            finally:
+                spinner.visible = False
+                text_widget.visible = True
+                btn.disabled = False
+                btn.update()
+
+        btn = ft.ElevatedButton(
+            content=row,
+            on_click=_on_click,
+            style=ft.ButtonStyle(
+                bgcolor=btn_bg,
+                color=btn_color,
+                padding=ft.Padding(left=20, right=20, top=12, bottom=12),
+                shape=ft.RoundedRectangleBorder(radius=8),
+            ),
+            expand=expand,
+        )
+        btn._spinner = spinner
+        btn._text_widget = text_widget
+        return btn
+
+
+class KpiCard:
+    @staticmethod
+    def create(
+        title: str,
+        value: str,
+        icon,
+        color: str | None = None,
+        light_color: str | None = None,
+        trend: str | None = None,  # "+12%" or "-5%"
+        col_size: int = 3,
+        page=None,
+    ) -> ft.Container:
+        mode = page.theme_mode if page else None
+        c = theme_manager.palette(mode)
+
+        color = color or c["primary"]
+        light_color = light_color or c["primary_light"]
+
+        trend_color = c["success"] if trend and trend.startswith("+") else c["accent"] if trend else None
+
+        return ft.Container(
+            content=ft.Column(
+                [
+                    ft.Row(
+                        [
+                            ft.Container(
+                                content=ft.Icon(icon, color=color, size=22),
+                                bgcolor=light_color,
+                                padding=10,
+                                border_radius=8,
+                            ),
+                            ft.Column(
+                                [
+                                    T.caption(title, page=page, size=11),
+                                    ft.Row(
+                                        [
+                                            T.stat(value, page=page, color=color, size=20),
+                                            ft.Text(
+                                                trend,
+                                                size=11,
+                                                color=trend_color,
+                                                weight=ft.FontWeight.SEMI_BOLD,
+                                            ) if trend else ft.Container(height=0),
+                                        ],
+                                        spacing=6,
+                                        alignment=ft.MainAxisAlignment.END,
+                                    ),
+                                ],
+                                spacing=2,
+                                expand=True,
+                                horizontal_alignment=ft.CrossAxisAlignment.END,
+                            ),
+                        ],
+                        spacing=12,
+                    ),
+                ]
+            ),
+            col={"sm": 6, "md": col_size, "xl": col_size},
+            padding=16,
+            bgcolor=c["surface"],
+            border_radius=12,
+            shadow=ft.BoxShadow(spread_radius=1, blur_radius=4, color=c["shadow"]),
+        )
+
+
+class AppDataTable:
+    """Reusable data table with consistent theming and mobile card fallback.
+
+    Usage:
+        AppDataTable(
+            columns=[ColumnDef("Nombre", "nombre"), ColumnDef("Precio", "precio")],
+            rows=[{"nombre": "Prod A", "precio": 100}],
+            on_select=lambda row: ...,
+            page=page,
+        )
+    """
+
+    @staticmethod
+    def create(
+        columns: list[tuple[str, str]],  # (header_label, data_key)
+        rows: list[dict],
+        on_select=None,
+        selected_ids: set | None = None,
+        id_key: str = "id",
+        empty_message: str = "No hay datos",
+        empty_action_text: str | None = None,
+        empty_action=None,
+        page=None,
+    ) -> ft.Control:
+        mode = page.theme_mode if page else None
+        c = theme_manager.palette(mode)
+
+        if not rows:
+            return EmptyState.create(
+                title=empty_message,
+                action_text=empty_action_text,
+                on_action=empty_action,
+                page=page,
+            )
+
+        selected_ids = selected_ids or set()
+
+        data_cols = [
+            ft.DataColumn(ft.Text(header, weight="bold"))
+            for header, _ in columns
+        ]
+
+        data_rows = []
+        for row in rows:
+            row_id = row.get(id_key, "")
+            is_selected = row_id in selected_ids
+            cells = []
+            for _, key in columns:
+                val = row.get(key, "")
+                if isinstance(val, float):
+                    text = f"${val:,.2f}"
+                else:
+                    text = str(val) if val is not None else ""
+                cells.append(
+                    ft.DataCell(
+                        ft.Text(text, size=13, color=c["text_primary"]),
+                    )
+                )
+
+            row_color = c["table_row_alt"] if len(data_rows) % 2 == 0 else c["table_row"]
+
+            data_rows.append(
+                ft.DataRow(
+                    cells=cells,
+                    color=row_color,
+                    on_select_changed=lambda e, r=row: on_select(r) if on_select else None,
+                    selected=is_selected,
+                )
+            )
+
+        return ft.DataTable(
+            columns=data_cols,
+            rows=data_rows,
+            border=ft.border.Border(
+                ft.BorderSide(1, c["divider"]),
+                ft.BorderSide(1, c["divider"]),
+                ft.BorderSide(1, c["divider"]),
+                ft.BorderSide(1, c["divider"]),
+            ),
+            border_radius=10,
+            heading_row_color=c["table_heading"],
+            heading_row_height=50,
+            data_row_max_height=40,
+            horizontal_lines=ft.BorderSide(0.1, c["divider"]),
+            vertical_lines=ft.BorderSide(0.1, c["divider"]),
+            divider_thickness=1,
+        )
+
+    @staticmethod
+    def create_mobile_cards(
+        columns: list[tuple[str, str, int]],  # (label, key, flex)
+        rows: list[dict],
+        on_select=None,
+        page=None,
+    ) -> ft.Column:
+        """Mobile-friendly card list as alternative to DataTable."""
+        mode = page.theme_mode if page else None
+        c = theme_manager.palette(mode)
+
+        if not rows:
+            return EmptyState.create(page=page)
+
+        cards = []
+        for row in rows:
+            card_content = []
+            for label, key, flex in columns:
+                val = row.get(key, "")
+                if isinstance(val, float):
+                    text = f"${val:,.2f}"
+                else:
+                    text = str(val) if val is not None else ""
+                card_content.append(
+                    ft.Row(
+                        [
+                            ft.Text(label + ":", size=11, color=c["text_muted"], weight="bold"),
+                            ft.Text(text, size=13, color=c["text_primary"], expand=True),
+                        ],
+                        spacing=4,
+                    )
+                )
+
+            card = ft.Container(
+                content=ft.Column(card_content, spacing=4),
+                padding=12,
+                bgcolor=c["surface"],
+                border_radius=8,
+                shadow=ft.BoxShadow(spread_radius=1, blur_radius=2, color=c["shadow"]),
+                on_click=lambda e, r=row: on_select(r) if on_select else None,
+            )
+            cards.append(card)
+
+        return ft.Column(cards, spacing=8, scroll=ft.ScrollMode.AUTO)
+
+
+class DialogBase:
+    """Base dialog with consistent styling."""
+
+    @staticmethod
+    def create(
+        title: str,
+        content: ft.Control,
+        actions: list[ft.Control] | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        page=None,
+    ) -> ft.AlertDialog:
+        mode = page.theme_mode if page else None
+        c = theme_manager.palette(mode)
+
+        dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(title, weight=ft.FontWeight.BOLD, color=c["text_primary"]),
+            content=ft.Container(
+                content=content,
+                width=width,
+                height=height,
+                padding=10,
+            ),
+            actions=actions or [],
+            actions_alignment=ft.MainAxisAlignment.END,
+            bgcolor=c["surface"],
+        )
+        return dialog
+
+    @staticmethod
+    def show(page: ft.Page, dialog: ft.AlertDialog):
+        dialog.open = True
+        page.show_dialog(dialog)
+        page.update()
+
+    @staticmethod
+    def close(page: ft.Page, dialog: ft.AlertDialog):
+        dialog.open = False
+        page.pop_dialog()
+        page.update()
 
 
 # ============================================================================
@@ -628,7 +929,7 @@ class SidebarItem:
                 alignment=ft.MainAxisAlignment.START,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
-            padding=ft.Padding(left=8, right=10, top=8, bottom=8),
+            padding=ft.Padding(left=10, right=10, top=10, bottom=10),
             on_click=lambda _e: self.on_click() if self.on_click else None,
             bgcolor=bg,
             border_radius=8,
@@ -870,12 +1171,12 @@ class SidebarUserCard:
                             ft.Container(
                                 content=ft.Text(
                                     self.role,
-                                    size=9,
+                                    size=10,
                                     color="white",
                                     weight=ft.FontWeight.BOLD,
                                 ),
                                 bgcolor=role_pill_bg,
-                                padding=ft.Padding(left=6, right=6, top=1, bottom=1),
+                                padding=ft.Padding(left=8, right=8, top=2, bottom=2),
                                 border_radius=8,
                             ),
                         ],

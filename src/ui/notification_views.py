@@ -1,4 +1,4 @@
-"""Notifications views for notification management.
+"""Notifications views for notification management, refactored for clarity.
 
 Provides UI for notifications, templates, channels, and preferences.
 """
@@ -7,12 +7,24 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
+
+
+def _c(app):
+    """Get the active color palette."""
+    return theme_manager.palette(page=app.page)
 
 
 # ============ Notificaciones ============
@@ -20,7 +32,7 @@ logger = setup_logger(__name__)
 
 async def show_notificaciones(app):
     """Display notifications management view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     tipo_filter = ft.Dropdown(
@@ -34,8 +46,8 @@ async def show_notificaciones(app):
         ],
         value="",
         width=150,
-        fill_color="#F8FAFC",
-        color="#0F172A",
+        fill_color=c["input_fill"],
+        color=c["text_primary"],
     )
 
     async def refresh():
@@ -43,7 +55,8 @@ async def show_notificaciones(app):
         try:
             notificaciones = await controller.obtener_notificaciones(tipo=tipo)
             no_leidas = await controller.contar_no_leidas()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener notificaciones: %s", e)
             notificaciones = []
             no_leidas = 0
 
@@ -64,7 +77,7 @@ async def show_notificaciones(app):
                 "warning": THEME_WARNING_COLOR,
                 "error": THEME_ACCENT_COLOR,
                 "success": THEME_SUCCESS_COLOR,
-            }.get(tipo, "#475569")
+            }.get(tipo, c["text_secondary"])
 
             estado = n.get("estado", "")
             is_read = estado == "leido"
@@ -112,14 +125,14 @@ async def show_notificaciones(app):
                 ft.DataColumn(ft.Text("Acciones")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay notificaciones", color="#475569"),
+                content=ft.Text("No hay notificaciones", color=c["text_secondary"]),
                 padding=40,
             )
         )
@@ -158,13 +171,14 @@ async def show_notificaciones(app):
 
 async def show_plantillas_notificacion(app):
     """Display notification templates management view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     async def refresh():
         try:
             plantillas = await controller.obtener_plantillas_notificacion()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener plantillas de notificación: %s", e)
             plantillas = []
 
         rows = []
@@ -201,14 +215,14 @@ async def show_plantillas_notificacion(app):
                 ft.DataColumn(ft.Text("Acciones")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay plantillas", color="#475569"),
+                content=ft.Text("No hay plantillas", color=c["text_secondary"]),
                 padding=40,
             )
         )

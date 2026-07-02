@@ -1,4 +1,4 @@
-"""Purchasing views for quotations, supplier evaluations, and receiving.
+"""Purchasing views for quotations, supplier evaluations, and receiving, refactored for clarity.
 
 Provides UI for managing quotations, evaluating suppliers, and receiving goods.
 """
@@ -7,19 +7,19 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
 
-
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
 
 
 # ============ Cotizaciones ============
@@ -27,13 +27,14 @@ def _fmt_money(v) -> str:
 
 async def show_cotizaciones(app):
     """Display quotations management view."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             cotizaciones = await controller.obtener_cotizaciones()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener cotizaciones: %s", e)
             cotizaciones = []
 
         rows = []
@@ -147,7 +148,8 @@ async def show_cotizaciones(app):
     async def open_new(e):
         try:
             proveedores = await controller.obtener_proveedores()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener proveedores: %s", e)
             proveedores = []
 
         proveedor_opts = [f"{p.get('id')} — {p.get('nombre', '')}" for p in proveedores]

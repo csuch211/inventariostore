@@ -1,5 +1,18 @@
 """Inventory analysis: ABC analysis, turnover, aging, stockout risk."""
 
+# ABC classification thresholds (% of cumulative revenue)
+ABC_CLASS_A_THRESHOLD = 80
+ABC_CLASS_B_THRESHOLD = 95
+
+# Aging thresholds (days)
+AGING_FRESH_DAYS = 30
+AGING_OLD_DAYS = 90
+
+# Stockout risk thresholds (days)
+STOCKOUT_HIGH_RISK_DAYS = 14
+STOCKOUT_MEDIUM_RISK_DAYS = 30
+STOCKOUT_LOW_RISK_DAYS = 90
+
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -39,9 +52,9 @@ def analisis_abc(productos: list[dict]) -> list[dict]:
         cumulative += p["_revenue"]
         pct = (cumulative / total_revenue) * 100
 
-        if pct <= 80:
+        if pct <= ABC_CLASS_A_THRESHOLD:
             p["abc_class"] = "A"
-        elif pct <= 95:
+        elif pct <= ABC_CLASS_B_THRESHOLD:
             p["abc_class"] = "B"
         else:
             p["abc_class"] = "C"
@@ -79,9 +92,9 @@ def calcular_rotacion_inventario(productos: list[dict], ventas_periodo: list[dic
     days_of_supply = (avg_inventory / cogs * 365) if cogs > 0 else 999
 
     # Stockout risk based on days of supply
-    if days_of_supply < 30:
+    if days_of_supply < STOCKOUT_MEDIUM_RISK_DAYS:
         stockout_risk = "high"
-    elif days_of_supply < 90:
+    elif days_of_supply < STOCKOUT_LOW_RISK_DAYS:
         stockout_risk = "medium"
     else:
         stockout_risk = "low"
@@ -109,7 +122,7 @@ def analisis_envejecimiento(productos: list[dict]) -> list[dict]:
         - old: moved 90+ days ago
         - stagnant: never moved
     """
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     now = datetime.now()
     result = []
@@ -122,9 +135,9 @@ def analisis_envejecimiento(productos: list[dict]) -> list[dict]:
             try:
                 moved_date = datetime.fromisoformat(last_moved)
                 days_since = (now - moved_date).days
-                if days_since <= 30:
+                if days_since <= AGING_FRESH_DAYS:
                     aging = "fresh"
-                elif days_since <= 90:
+                elif days_since <= AGING_OLD_DAYS:
                     aging = "aging"
                 else:
                     aging = "old"
@@ -153,16 +166,13 @@ def calcular_riesgo_agotamiento(productos: list[dict]) -> list[dict]:
         stock_min = p.get("stock_min", 0)
         daily_sales = p.get("daily_sales", 1)  # Default to 1 if not provided
 
-        if daily_sales <= 0:
-            days_until_stockout = 999
-        else:
-            days_until_stockout = qty / daily_sales
+        days_until_stockout = 999 if daily_sales <= 0 else qty / daily_sales
 
         if qty == 0:
             risk_level = "critical"
         elif qty <= stock_min:
             risk_level = "high"
-        elif days_until_stockout < 14:
+        elif days_until_stockout < STOCKOUT_HIGH_RISK_DAYS:
             risk_level = "medium"
         else:
             risk_level = "low"

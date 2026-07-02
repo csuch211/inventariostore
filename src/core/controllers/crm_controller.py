@@ -5,6 +5,7 @@ from services.database import DatabaseManager
 from services.export import ExportService
 from services.permissions import Perm, require_permission
 from utils.logger import setup_logger
+from utils.validators import Validator
 
 logger = setup_logger(__name__)
 
@@ -31,12 +32,28 @@ class CRMController:
     @require_permission(Perm.CLIENTES_GESTIONAR)
     async def crear_contacto(self, **kwargs) -> tuple[bool, dict]:
         """Create a new contact."""
+        nombre = kwargs.get("nombre", "")
+        if not nombre:
+            return False, {"error": "El nombre es requerido"}
+        is_valid, error = Validator.validate_nombre(nombre)
+        if not is_valid:
+            return False, {"error": error}
+        email = kwargs.get("email", "")
+        if email:
+            is_valid, error = Validator.validate_email(email)
+            if not is_valid:
+                return False, {"error": error}
+        telefono = kwargs.get("telefono", "")
+        if telefono:
+            is_valid, error = Validator.validate_telefono(telefono)
+            if not is_valid:
+                return False, {"error": error}
         try:
             kwargs["usuario"] = self.current_user or "system"
             result = self.db.crm_repo.crear_contacto(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating contact: {e}")
+            logger.exception(f"Error creating contact: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -45,7 +62,7 @@ class CRMController:
         try:
             return self.db.crm_repo.obtener_contacto(contacto_id)
         except Exception as e:
-            logger.error(f"Error fetching contact: {e}")
+            logger.exception(f"Error fetching contact: {e}")
             return None
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -56,7 +73,7 @@ class CRMController:
         try:
             return self.db.crm_repo.obtener_contactos(empresa=empresa, estado=estado)
         except Exception as e:
-            logger.error(f"Error fetching contacts: {e}")
+            logger.exception(f"Error fetching contacts: {e}")
             return []
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
@@ -67,7 +84,7 @@ class CRMController:
             self.db.crm_repo.actualizar_contacto(contacto_id, **kwargs)
             return True, {"message": "Contact updated"}
         except Exception as e:
-            logger.error(f"Error updating contact: {e}")
+            logger.exception(f"Error updating contact: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
@@ -77,7 +94,7 @@ class CRMController:
             self.db.crm_repo.eliminar_contacto(contacto_id, usuario=self.current_user or "system")
             return True, {"message": "Contact deactivated"}
         except Exception as e:
-            logger.error(f"Error deactivating contact: {e}")
+            logger.exception(f"Error deactivating contact: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -86,7 +103,7 @@ class CRMController:
         try:
             return self.db.crm_repo.buscar_contactos(query)
         except Exception as e:
-            logger.error(f"Error searching contacts: {e}")
+            logger.exception(f"Error searching contacts: {e}")
             return []
 
     # ============ Oportunidades ============
@@ -94,12 +111,14 @@ class CRMController:
     @require_permission(Perm.CLIENTES_GESTIONAR)
     async def crear_oportunidad(self, **kwargs) -> tuple[bool, dict]:
         """Create a new opportunity."""
+        if not kwargs:
+            return False, {"error": "Se requieren datos para crear la oportunidad"}
         try:
             kwargs["usuario"] = self.current_user or "system"
             result = self.db.crm_repo.crear_oportunidad(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating opportunity: {e}")
+            logger.exception(f"Error creating opportunity: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -112,7 +131,7 @@ class CRMController:
                 estado=estado, contacto_id=contacto_id
             )
         except Exception as e:
-            logger.error(f"Error fetching opportunities: {e}")
+            logger.exception(f"Error fetching opportunities: {e}")
             return []
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
@@ -126,7 +145,7 @@ class CRMController:
             )
             return True, {"message": "Opportunity updated"}
         except Exception as e:
-            logger.error(f"Error updating opportunity: {e}")
+            logger.exception(f"Error updating opportunity: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
@@ -138,7 +157,7 @@ class CRMController:
             )
             return True, {"message": "Opportunity deleted"}
         except Exception as e:
-            logger.error(f"Error deleting opportunity: {e}")
+            logger.exception(f"Error deleting opportunity: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -147,7 +166,7 @@ class CRMController:
         try:
             return self.db.crm_repo.pipeline_oportunidades()
         except Exception as e:
-            logger.error(f"Error fetching pipeline: {e}")
+            logger.exception(f"Error fetching pipeline: {e}")
             return {}
 
     # ============ Actividades ============
@@ -160,7 +179,7 @@ class CRMController:
             result = self.db.crm_repo.crear_actividad(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating activity: {e}")
+            logger.exception(f"Error creating activity: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -173,7 +192,7 @@ class CRMController:
                 contacto_id=contacto_id, estado=estado
             )
         except Exception as e:
-            logger.error(f"Error fetching activities: {e}")
+            logger.exception(f"Error fetching activities: {e}")
             return []
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
@@ -187,7 +206,7 @@ class CRMController:
             )
             return True, {"message": "Activity completed"}
         except Exception as e:
-            logger.error(f"Error completing activity: {e}")
+            logger.exception(f"Error completing activity: {e}")
             return False, {"error": str(e)}
 
     # ============ Notas ============
@@ -200,7 +219,7 @@ class CRMController:
             result = self.db.crm_repo.crear_nota(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating note: {e}")
+            logger.exception(f"Error creating note: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_LEER)
@@ -213,5 +232,5 @@ class CRMController:
                 contacto_id=contacto_id, oportunidad_id=oportunidad_id
             )
         except Exception as e:
-            logger.error(f"Error fetching notes: {e}")
+            logger.exception(f"Error fetching notes: {e}")
             return []

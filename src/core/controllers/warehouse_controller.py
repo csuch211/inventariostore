@@ -2,6 +2,7 @@
 Warehouse controller for almacenes, bulk operations, stock alerts, advanced search, and restocking
 """
 
+from services import advanced_inventory_db
 from services.auth import AuthService
 from services.database import DatabaseManager
 from services.export import ExportService
@@ -35,7 +36,7 @@ class WarehouseController:
         try:
             return self.db.obtener_productos_con_stock_bajo()
         except Exception as e:
-            logger.error(f"Error fetching stock alerts: {e}")
+            logger.exception(f"Error fetching stock alerts: {e}")
             return []
 
     async def contar_alertas_stock(self) -> int:
@@ -52,7 +53,7 @@ class WarehouseController:
         try:
             return self.db.obtener_almacenes()
         except Exception as e:
-            logger.error(f"Error fetching warehouses: {e}")
+            logger.exception(f"Error fetching warehouses: {e}")
             return []
 
     @require_permission(Perm.ALMACENES_GESTIONAR)
@@ -66,7 +67,7 @@ class WarehouseController:
             logger.info(f"Warehouse created: {nombre}")
             return True, {"id": aid, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error creating warehouse: {e}")
+            logger.exception(f"Error creating warehouse: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ALMACENES_GESTIONAR)
@@ -82,7 +83,7 @@ class WarehouseController:
             )
             return True, {"message": "Almacén actualizado"}
         except Exception as e:
-            logger.error(f"Error updating warehouse: {e}")
+            logger.exception(f"Error updating warehouse: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ALMACENES_GESTIONAR)
@@ -91,7 +92,7 @@ class WarehouseController:
             self.db.eliminar_almacen(almacen_id=almacen_id, usuario=self.current_user or "system")
             return True, {"message": "Almacén eliminado"}
         except Exception as e:
-            logger.error(f"Error deleting warehouse: {e}")
+            logger.exception(f"Error deleting warehouse: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ALMACENES_STOCK)
@@ -99,7 +100,7 @@ class WarehouseController:
         try:
             return self.db.obtener_inventario_almacen(almacen_id)
         except Exception as e:
-            logger.error(f"Error fetching warehouse inventory: {e}")
+            logger.exception(f"Error fetching warehouse inventory: {e}")
             return []
 
     @require_permission(Perm.ALMACENES_STOCK)
@@ -118,14 +119,14 @@ class WarehouseController:
             )
             return True, {"old": old, "new": cantidad}
         except Exception as e:
-            logger.error(f"Error adjusting warehouse stock: {e}")
+            logger.exception(f"Error adjusting warehouse stock: {e}")
             return False, {"error": str(e)}
 
     async def obtener_todo_stock_almacenes(self) -> list[dict]:
         try:
             return self.db.obtener_todo_stock_almacenes()
         except Exception as e:
-            logger.error(f"Error fetching all warehouse stock: {e}")
+            logger.exception(f"Error fetching all warehouse stock: {e}")
             return []
 
     # ============ Bulk Operations (F2.2) ============
@@ -137,7 +138,7 @@ class WarehouseController:
             logger.info(f"Bulk deleted {count} products")
             return True, count
         except Exception as e:
-            logger.error(f"Error bulk deleting: {e}")
+            logger.exception(f"Error bulk deleting: {e}")
             return False, 0
 
     @require_permission(Perm.BULK_CATEGORIA)
@@ -149,7 +150,7 @@ class WarehouseController:
             logger.info(f"Bulk category update: {count} products -> {categoria}")
             return True, count
         except Exception as e:
-            logger.error(f"Error bulk updating category: {e}")
+            logger.exception(f"Error bulk updating category: {e}")
             return False, 0
 
     @require_permission(Perm.BULK_EXPORTAR)
@@ -168,7 +169,7 @@ class WarehouseController:
                 return False, f"Unsupported format: {fmt}"
             return True, str(path)
         except Exception as e:
-            logger.error(f"Error bulk exporting: {e}")
+            logger.exception(f"Error bulk exporting: {e}")
             return False, str(e)
 
     # ============ Fase 1: Búsqueda avanzada ============
@@ -187,10 +188,8 @@ class WarehouseController:
         orden: str = "nombre",
         limite: int = 200,
     ) -> list[dict]:
-        from services import phase1_db
-
         try:
-            return phase1_db.buscar_productos_avanzado(
+            return advanced_inventory_db.buscar_productos_avanzado(
                 self.db,
                 texto=texto,
                 categoria=categoria,
@@ -204,7 +203,7 @@ class WarehouseController:
                 limite=limite,
             )
         except Exception as e:
-            logger.error(f"Error in advanced search: {e}")
+            logger.exception(f"Error in advanced search: {e}")
             return []
 
     # ============ Fase 1: Auto-reaprovisionamiento ============
@@ -214,12 +213,10 @@ class WarehouseController:
         self,
         supplier_id: int | None = None,
     ) -> list[dict]:
-        from services import phase1_db
-
         try:
-            return phase1_db.sugerir_reabastecimiento(self.db, supplier_id=supplier_id)
+            return advanced_inventory_db.sugerir_reabastecimiento(self.db, supplier_id=supplier_id)
         except Exception as e:
-            logger.error(f"Error computing suggestions: {e}")
+            logger.exception(f"Error computing suggestions: {e}")
             return []
 
     @require_permission(Perm.ORDENES_CREAR)
@@ -228,10 +225,8 @@ class WarehouseController:
         supplier_id: int,
         suggestions: list[dict],
     ) -> tuple[bool, dict]:
-        from services import phase1_db
-
         try:
-            ids = phase1_db.crear_ordenes_desde_sugerencias(
+            ids = advanced_inventory_db.crear_ordenes_desde_sugerencias(
                 self.db,
                 supplier_id=supplier_id,
                 suggestions=suggestions,
@@ -239,5 +234,5 @@ class WarehouseController:
             )
             return True, {"ids": ids, "count": len(ids)}
         except Exception as e:
-            logger.error(f"Error creating orders from suggestions: {e}")
+            logger.exception(f"Error creating orders from suggestions: {e}")
             return False, {"error": str(e)}

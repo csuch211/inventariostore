@@ -1,5 +1,6 @@
 """Accounting repository for double-entry bookkeeping."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -12,13 +13,15 @@ logger = setup_logger(__name__)
 class AccountingRepository(BaseRepository):
     """Repository for accounting operations."""
 
-    def _next_asiento_number(self) -> str:
+    def _next_asiento_number(self, fecha: str | None = None) -> str:
         """Generate the next sequential journal entry number."""
-        year = datetime.now().year
+        year = str(datetime.now().year)
+        if fecha and len(fecha) >= 4:
+            year = fecha[:4]
         with self._get_connection() as conn:
             row = conn.execute(
                 "SELECT COUNT(*) as cnt FROM asientos_contables WHERE strftime('%Y', fecha) = ?",
-                (str(year),),
+                (year,),
             ).fetchone()
             seq = (row["cnt"] or 0) + 1
         return f"ASI-{year}-{seq:05d}"
@@ -44,7 +47,7 @@ class AccountingRepository(BaseRepository):
             referencia_id: Optional reference transaction ID
             referencia_tipo: Optional reference type
         """
-        numero = self._next_asiento_number()
+        numero = self._next_asiento_number(fecha)
         now = datetime.now().isoformat()
 
         # Validate: total debits must equal total credits
@@ -117,6 +120,11 @@ class AccountingRepository(BaseRepository):
                     where.append("fecha <= ?")
                     params.append(fecha_fin)
 
+                _allowed_columns = {"fecha"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"SELECT * FROM asientos_contables WHERE {where_clause} ORDER BY fecha DESC, id DESC",
@@ -156,6 +164,11 @@ class AccountingRepository(BaseRepository):
                     where.append("a.fecha <= ?")
                     params.append(fecha_fin)
 
+                _allowed_columns = {"a.estado", "a.fecha"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where)
                 cursor = conn.execute(
                     f"""SELECT

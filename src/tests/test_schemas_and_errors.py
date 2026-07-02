@@ -65,8 +65,8 @@ class TestSchemas:
         assert t.nota == ""
 
     def test_lote_data(self):
-        l = LoteData(producto_id=1, codigo_lote="L001")
-        assert l.fecha_vencimiento is None
+        lote = LoteData(producto_id=1, codigo_lote="L001")
+        assert lote.fecha_vencimiento is None
 
     def test_variante_data(self):
         v = VarianteData(producto_id=1, sku="SKU-001", atributos='{"talla":"M"}')

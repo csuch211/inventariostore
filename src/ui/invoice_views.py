@@ -1,26 +1,25 @@
-"""Invoice views for billing management.
+"""Invoice views for billing management, refactored for clarity.
 
 Provides UI for creating, viewing, and managing invoices.
 """
 
 import asyncio
-import json
 
 import flet as ft
 
-from config.settings import THEME_ACCENT_COLOR, THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
 
-
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
 
 
 # ============ Facturas ============
@@ -28,13 +27,14 @@ def _fmt_money(v) -> str:
 
 async def show_facturas(app):
     """Display invoices management view."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             facturas = await controller.obtener_facturas()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener facturas: %s", e)
             facturas = []
 
         rows = []
@@ -202,7 +202,8 @@ async def show_facturas(app):
         # Get clients for dropdown
         try:
             clientes = await controller.obtener_clientes()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener clientes: %s", e)
             clientes = []
 
         cliente_opts = [f"{c.get('id')} — {c.get('nombre', '')}" for c in clientes]

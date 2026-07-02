@@ -8,19 +8,21 @@ replaces sys.stdout under Python 3.14 on Windows.
 
 import warnings
 
+import flet as ft
+
+from config.settings import ensure_dirs
+from ui.app_view import AppView
 from utils.logger import setup_logger
 
 # Silence noisy DeprecationWarnings from Flet under Python 3.14+
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="flet_runtime")
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="flet_core")
-
-from config.settings import ensure_dirs
+warnings.filterwarnings(
+    "ignore", category=DeprecationWarning, module="flet_runtime"
+)
+warnings.filterwarnings(
+    "ignore", category=DeprecationWarning, module="flet_core"
+)
 
 ensure_dirs()
-
-import flet as ft
-
-from ui.app_view import AppView
 
 logger = setup_logger("main")
 
@@ -38,7 +40,7 @@ async def main(page: ft.Page):
 
 if __name__ == "__main__":
     try:
-        ft.run(main)
+        _ = ft.run(main)
     except Exception:
         logger.exception("Unhandled exception in ft.run")
         raise

@@ -7,8 +7,6 @@ import logging
 import logging.handlers
 import sys
 
-from config.settings import DEBUG, LOG_FILE, LOG_LEVEL, LOG_PATH
-
 
 def _safe_emit(stream):
     """Return True if stream is writable, False otherwise."""
@@ -21,7 +19,7 @@ def _safe_emit(stream):
         # Writing an empty string is a cheap liveness check
         stream.write("")
         return True
-    except OSError, ValueError, AttributeError:
+    except (OSError, ValueError, AttributeError):
         return False
 
 
@@ -44,7 +42,7 @@ def _patched_stream_emit(self, record):  # type: ignore[no-redef]
         if stream is None or (hasattr(stream, "closed") and stream.closed):
             return
         _original_stream_emit(self, record)
-    except OSError, ValueError, AttributeError:
+    except (OSError, ValueError, AttributeError):
         # Stream became invalid between checks. Swallow it; the file
         # handler keeps capturing the message and the app stays up.
         with contextlib.suppress(Exception):
@@ -70,6 +68,18 @@ class SafeStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
+class _SafeRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """RotatingFileHandler that handles Windows file-locking gracefully."""
+
+    def emit(self, record):
+        with contextlib.suppress(PermissionError):
+            super().emit(record)
+
+    def doRollover(self):
+        with contextlib.suppress(PermissionError):
+            super().doRollover()
+
+
 def setup_logger(name: str) -> logging.Logger:
     """
     Configure logger with both file and console handlers.
@@ -84,6 +94,8 @@ def setup_logger(name: str) -> logging.Logger:
     Returns:
         Configured logger instance
     """
+    from config.settings import DEBUG, LOG_FILE, LOG_LEVEL, LOG_PATH
+
     logger = logging.getLogger(name)
 
     if logger.handlers:  # Avoid adding handlers multiple times
@@ -110,7 +122,7 @@ def setup_logger(name: str) -> logging.Logger:
 
     # File handler (rotating to prevent huge files)
     try:
-        file_handler = logging.handlers.RotatingFileHandler(
+        file_handler = _SafeRotatingFileHandler(
             LOG_FILE,
             maxBytes=10_000_000,  # 10MB
             backupCount=5,

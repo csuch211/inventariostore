@@ -47,7 +47,7 @@ class PurchasingController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating quotation: {e}")
+            logger.exception(f"Error creating quotation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_LEER)
@@ -56,7 +56,7 @@ class PurchasingController:
         try:
             return self.db.purchasing_repo.obtener_cotizacion(cotizacion_id)
         except Exception as e:
-            logger.error(f"Error fetching quotation: {e}")
+            logger.exception(f"Error fetching quotation: {e}")
             return None
 
     @require_permission(Perm.ORDENES_LEER)
@@ -69,7 +69,7 @@ class PurchasingController:
                 proveedor_id=proveedor_id, estado=estado
             )
         except Exception as e:
-            logger.error(f"Error fetching quotations: {e}")
+            logger.exception(f"Error fetching quotations: {e}")
             return []
 
     @require_permission(Perm.ORDENES_CREAR)
@@ -81,7 +81,7 @@ class PurchasingController:
             )
             return True, {"message": "Quotation approved"}
         except Exception as e:
-            logger.error(f"Error approving quotation: {e}")
+            logger.exception(f"Error approving quotation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_CANCELAR)
@@ -93,7 +93,7 @@ class PurchasingController:
             )
             return True, {"message": "Quotation rejected"}
         except Exception as e:
-            logger.error(f"Error rejecting quotation: {e}")
+            logger.exception(f"Error rejecting quotation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_CREAR)
@@ -105,7 +105,7 @@ class PurchasingController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error converting quotation: {e}")
+            logger.exception(f"Error converting quotation: {e}")
             return False, {"error": str(e)}
 
     # ============ Evaluaciones de Proveedor ============
@@ -118,7 +118,7 @@ class PurchasingController:
             result = self.db.purchasing_repo.crear_evaluacion_proveedor(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating supplier evaluation: {e}")
+            logger.exception(f"Error creating supplier evaluation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.PROVEEDORES_LEER)
@@ -131,7 +131,7 @@ class PurchasingController:
                 proveedor_id=proveedor_id
             )
         except Exception as e:
-            logger.error(f"Error fetching evaluations: {e}")
+            logger.exception(f"Error fetching evaluations: {e}")
             return []
 
     @require_permission(Perm.PROVEEDORES_LEER)
@@ -140,7 +140,7 @@ class PurchasingController:
         try:
             return self.db.purchasing_repo.promedio_evaluacion_proveedor(proveedor_id)
         except Exception as e:
-            logger.error(f"Error calculating average scores: {e}")
+            logger.exception(f"Error calculating average scores: {e}")
             return {}
 
     # ============ Recepciones ============
@@ -166,7 +166,7 @@ class PurchasingController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating reception: {e}")
+            logger.exception(f"Error creating reception: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ORDENES_LEER)
@@ -179,5 +179,5 @@ class PurchasingController:
                 proveedor_id=proveedor_id
             )
         except Exception as e:
-            logger.error(f"Error fetching receptions: {e}")
+            logger.exception(f"Error fetching receptions: {e}")
             return []

@@ -73,6 +73,11 @@ class InventoryRepository(BaseRepository):
             updates.append("actualizado_en = ?")
             values.append(now)
             values.append(almacen_id)
+            _allowed_columns = {"nombre", "ubicacion", "actualizado_en"}
+            for upd in updates:
+                col_name = upd.split(" = ")[0]
+                if col_name not in _allowed_columns:
+                    raise ValueError(f"Columna no permitida: {col_name}")
             with self._get_connection() as conn:
                 conn.execute(f"UPDATE almacenes SET {', '.join(updates)} WHERE id = ?", values)
                 conn.commit()

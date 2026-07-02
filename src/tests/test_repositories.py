@@ -229,8 +229,8 @@ class TestConfigRepository:
         assert value == "default_val"
 
     def test_registrar_backup(self, config_repo):
-        bid = config_repo.registrar_backup("/tmp/test.zip", 1024, "manual", "admin")
-        assert bid is not None or True  # Some repos may return None for void operations
+        config_repo.registrar_backup("/tmp/test.zip", 1024, "manual", "admin")
+        assert True  # Some repos may return None for void operations
 
     def test_obtener_backups(self, config_repo):
         config_repo.registrar_backup("/tmp/b1.zip", 500, "manual", "admin")

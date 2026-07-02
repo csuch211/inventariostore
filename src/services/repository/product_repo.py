@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from config.settings import STOCK_LOW_DEFAULT
 from services.repository.base import BaseRepository
-from utils.exceptions import DatabaseException, DuplicateProductException
+from utils.exceptions import DatabaseException, DuplicateProductException, ProductNotFoundException
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -27,6 +27,10 @@ class ProductRepository(BaseRepository):
         usuario: str = "system",
     ) -> dict:
         """Create a new product"""
+        if len(codigo) > 50:
+            raise ValueError("El código no puede exceder 50 caracteres")
+        if len(nombre) > 200:
+            raise ValueError("El nombre no puede exceder 200 caracteres")
         try:
             now = datetime.now().isoformat()
             with self._get_connection() as conn:
@@ -171,6 +175,12 @@ class ProductRepository(BaseRepository):
             values.append(usuario)
             values.append(producto_id)
 
+            _allowed_columns = {"nombre", "cantidad", "precio", "descripcion", "categoria", "stock_min", "proveedor_id", "actualizado_en", "actualizado_por"}
+            for upd in updates:
+                col_name = upd.split(" = ")[0]
+                if col_name not in _allowed_columns:
+                    raise ValueError(f"Columna no permitida: {col_name}")
+
             with self._get_connection() as conn:
                 conn.execute(f"UPDATE productos SET {', '.join(updates)} WHERE id = ?", values)
                 conn.commit()
@@ -198,7 +208,7 @@ class ProductRepository(BaseRepository):
             with self._get_connection() as conn:
                 producto = self.obtener_producto_por_id(producto_id)
                 if not producto:
-                    raise DatabaseException(f"Product {producto_id} not found")
+                    raise ProductNotFoundException(f"Product {producto_id} not found")
 
                 cantidad_anterior = producto["cantidad"]
 
@@ -319,6 +329,7 @@ class ProductRepository(BaseRepository):
             raise DatabaseException(f"Failed to fetch stock history: {e}")
 
     def crear_categoria(self, nombre, descripcion="", usuario="system") -> int:
+        """Create a new category."""
         now = datetime.now().isoformat()
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -337,6 +348,7 @@ class ProductRepository(BaseRepository):
             return cursor.lastrowid
 
     def obtener_categorias(self) -> list[dict]:
+        """List all active categories."""
         with self._get_connection() as conn:
             cursor = conn.execute("SELECT * FROM categorias WHERE activo = 1 ORDER BY nombre")
             return [dict(r) for r in cursor.fetchall()]
@@ -344,6 +356,7 @@ class ProductRepository(BaseRepository):
     def crear_proveedor(
         self, nombre, contacto="", telefono="", email="", direccion="", usuario="system"
     ) -> int:
+        """Create a new supplier."""
         now = datetime.now().isoformat()
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -362,11 +375,13 @@ class ProductRepository(BaseRepository):
             return cursor.lastrowid
 
     def obtener_proveedores(self) -> list[dict]:
+        """List all active suppliers."""
         with self._get_connection() as conn:
             cursor = conn.execute("SELECT * FROM proveedores WHERE activo = 1 ORDER BY nombre")
             return [dict(r) for r in cursor.fetchall()]
 
     def crear_orden_compra(self, proveedor_id, producto_id, cantidad, usuario="system") -> int:
+        """Create a purchase order."""
         now = datetime.now().isoformat()
         with self._get_connection() as conn:
             cursor = conn.execute(
@@ -377,6 +392,7 @@ class ProductRepository(BaseRepository):
             return cursor.lastrowid
 
     def obtener_ordenes_compra(self, estado=None) -> list[dict]:
+        """List purchase orders, optionally filtered by status."""
         with self._get_connection() as conn:
             if estado:
                 cursor = conn.execute(
@@ -413,6 +429,10 @@ class ProductRepository(BaseRepository):
             select_cols = "*"
             table = "productos"
             prefix = ""
+        _allowed_tables_stock = {"productos", "productos p LEFT JOIN proveedores pr ON p.proveedor_id = pr.id"}
+        _allowed_selects_stock = {"*", "p.*, pr.nombre as proveedor_nombre"}
+        if table not in _allowed_tables_stock or select_cols not in _allowed_selects_stock:
+            raise DatabaseException("Invalid internal query parameters")
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute(
@@ -425,8 +445,8 @@ class ProductRepository(BaseRepository):
                         )
                         ORDER BY ({prefix}cantidad = 0) DESC,
                                  CASE WHEN {prefix}stock_min > 0
-                                      THEN {prefix}cantidad * 1.0 / {prefix}stock_min
-                                      ELSE {prefix}cantidad * 1.0 / ? END ASC""",
+                                       THEN {prefix}cantidad * 1.0 / {prefix}stock_min
+                                       ELSE {prefix}cantidad * 1.0 / ? END ASC""",
                     (low_threshold, low_threshold),
                 )
                 return [dict(r) for r in cursor.fetchall()]
@@ -455,6 +475,7 @@ class ProductRepository(BaseRepository):
         return rows
 
     def obtener_historial_stock_completo(self, limit=100) -> list[dict]:
+        """Get recent stock history across all products."""
         with self._get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -535,6 +556,7 @@ class ProductRepository(BaseRepository):
             raise DatabaseException(f"Failed to delete category: {e}")
 
     def obtener_categoria_por_id(self, categoria_id: int) -> dict | None:
+        """Get category by ID."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute("SELECT * FROM categorias WHERE id = ?", (categoria_id,))
@@ -583,6 +605,7 @@ class ProductRepository(BaseRepository):
         direccion: str = "",
         usuario: str = "system",
     ) -> int:
+        """Update supplier information."""
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:
@@ -628,6 +651,7 @@ class ProductRepository(BaseRepository):
             raise DatabaseException(f"Failed to delete supplier: {e}")
 
     def obtener_proveedor_por_id(self, proveedor_id: int) -> dict | None:
+        """Get supplier by ID."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute("SELECT * FROM proveedores WHERE id = ?", (proveedor_id,))
@@ -667,6 +691,7 @@ class ProductRepository(BaseRepository):
             raise DatabaseException(f"Failed to update order status: {e}")
 
     def eliminar_orden_compra(self, orden_id: int, usuario: str = "system") -> bool:
+        """Delete a purchase order."""
         try:
             with self._get_connection() as conn:
                 conn.execute("DELETE FROM ordenes_compra WHERE id = ?", (orden_id,))
@@ -684,6 +709,7 @@ class ProductRepository(BaseRepository):
             raise DatabaseException(f"Failed to delete order: {e}")
 
     def obtener_orden_compra_por_id(self, orden_id: int) -> dict | None:
+        """Get purchase order by ID."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute(
@@ -718,6 +744,7 @@ class ProductRepository(BaseRepository):
             raise DatabaseException(f"Failed to fetch category distribution: {e}")
 
     def obtener_top_productos_por_stock(self, limit: int = 10) -> list[dict]:
+        """Get top products ranked by stock quantity."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute(
@@ -758,6 +785,8 @@ class ProductRepository(BaseRepository):
 
     def bulk_eliminar_productos(self, ids: list[int], usuario: str = "system") -> int:
         """Bulk soft-delete products."""
+        if not ids:
+            return 0
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:
@@ -776,6 +805,9 @@ class ProductRepository(BaseRepository):
     def bulk_actualizar_categoria(
         self, ids: list[int], categoria: str, usuario: str = "system"
     ) -> int:
+        """Bulk update category for multiple products."""
+        if not ids:
+            return 0
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:
@@ -791,6 +823,8 @@ class ProductRepository(BaseRepository):
 
     def bulk_exportar_productos(self, ids: list[int]) -> list[dict]:
         """Export selected products as list of dicts."""
+        if not ids:
+            return []
         try:
             with self._get_connection() as conn:
                 placeholders = ",".join("?" for _ in ids)

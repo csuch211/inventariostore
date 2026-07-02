@@ -1,4 +1,4 @@
-"""
+"""Entity CRUD views (categories, suppliers, clients) refactored for clarity.
 Entity CRUD views (categories, suppliers, clients) extracted from AppView.
 
 Each function takes an ``app`` parameter (the AppView instance) and uses
@@ -13,7 +13,7 @@ from config.settings import (
     THEME_ACCENT_COLOR,
     THEME_PRIMARY_COLOR,
 )
-from services.permissions import Perm as P
+from services.permissions import Perm
 from ui.components import (
     AppHeader,
     DialogHelper,
@@ -21,9 +21,10 @@ from ui.components import (
     SnackBarHelper,
 )
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 
 async def show_categories(app):
@@ -381,7 +382,7 @@ async def show_clients(app):
         else:
             SnackBarHelper.error(app.page, t("common.error"))
 
-    can_manage = P.CLIENTES_GESTIONAR in app.controller.current_user_permissions
+    can_manage = Perm.CLIENTES_GESTIONAR in app.controller.current_user_permissions
 
     def build_rows():
         rows = []

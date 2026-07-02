@@ -10,12 +10,14 @@ authors = [
 dependencies = [
     "flet>=0.85.3",
     "flet-charts>=0.85.3",
-    "reportlab>=4.0",
-    "openpyxl>=3.1",
-    "fastapi>=0.110",
-    "uvicorn>=0.27",
-    "httpx>=0.27",
+    "reportlab>=5.0.0",
+    "openpyxl>=3.1.5",
+    "fastapi>=0.139.0",
+    "uvicorn>=0.49.0",
+    "httpx>=0.28.1",
     "pyjwt>=2.13.0",
+    "cryptography>=49.0.0",
+    "ruff>=0.15.20",
 ]
 
 [dependency-groups]
@@ -25,7 +27,9 @@ dev = [
     "flet-web>=0.85.3",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.15.18",
+    "pytest-cov>=7.1.0",
+    "pytest-playwright>=0.8.0",
+    "ruff>=0.15.20",
 ]
 
 [tool.flet]
@@ -59,17 +63,31 @@ quote-style = "double"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+asyncio_mode = "auto"
+testpaths = ["src/tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
 
 [tool.mypy]
-python_version = "3.14"
-strict = false
+python_version = "3.14" # Mantener la versión de Python
+strict = false # Desactivado por defecto para no romper el build
 warn_unused_ignores = true
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "core.*"
+strict = true
+
+[[tool.mypy.overrides]]
+module = "services.repository.*"
+strict = true
 
 [tool.coverage.run]
 source = ["src"]
 omit = ["src/tests/*", "src/main.py"]
 
 [tool.coverage.report]
-fail_under = 40
+fail_under = 50
 exclude_lines = ["pragma: no cover", "def __repr__", "if __name__ == .__main__.:"]

@@ -129,6 +129,10 @@ class Perm:
     IMAGE_SEARCH = "image_search.ejecutar"
     PUSH_ENVIAR = "push.enviar"
     PUSH_CONFIGURAR = "push.configurar"
+    WHATSAPP_CONFIGURAR = "whatsapp.configurar"
+    WHATSAPP_ENVIAR = "whatsapp.enviar"
+    TELEGRAM_CONFIGURAR = "telegram.configurar"
+    TELEGRAM_ENVIAR = "telegram.enviar"
 
     # Facturación
     FACTURAS_LEER = "facturas.leer"
@@ -143,6 +147,22 @@ class Perm:
     CONTABILIDAD_LEER = "contabilidad.leer"
     CONTABILIDAD_ASIENTOS = "contabilidad.asientos"
     CONTABILIDAD_PLAN_CUENTAS = "contabilidad.plan_cuentas"
+
+    # Carrito de compra
+    CARRITO_LEER = "carrito.leer"
+    CARRITO_GESTIONAR = "carrito.gestionar"
+    CARRITO_CONFIGURAR = "carrito.configurar"
+
+    # Tienda online
+    TIENDA_LEER = "tienda.leer"
+    TIENDA_GESTIONAR = "tienda.gestionar"
+    TIENDA_PEDIDOS_LEER = "tienda_pedidos.leer"
+    TIENDA_PEDIDOS_GESTIONAR = "tienda_pedidos.gestionar"
+
+    # Automatización
+    AUTOMATION_LEER = "automation.leer"
+    AUTOMATION_EJECUTAR = "automation.ejecutar"
+    AUTOMATION_CONFIGURAR = "automation.configurar"
 
 
 # All permissions grouped by module for display in the UI
@@ -262,6 +282,14 @@ PERMISSIONS_BY_MODULE: dict[str, list[dict[str, str]]] = {
         {"clave": Perm.PUSH_ENVIAR, "descripcion": "Encolar/enviar notificaciones push"},
         {"clave": Perm.PUSH_CONFIGURAR, "descripcion": "Configurar SMTP y destinos de push"},
     ],
+    "whatsapp": [
+        {"clave": Perm.WHATSAPP_CONFIGURAR, "descripcion": "Configurar WhatsApp"},
+        {"clave": Perm.WHATSAPP_ENVIAR, "descripcion": "Enviar mensajes por WhatsApp"},
+    ],
+    "telegram": [
+        {"clave": Perm.TELEGRAM_CONFIGURAR, "descripcion": "Configurar Telegram"},
+        {"clave": Perm.TELEGRAM_ENVIAR, "descripcion": "Enviar mensajes por Telegram"},
+    ],
     "facturas": [
         {"clave": Perm.FACTURAS_LEER, "descripcion": "Ver facturas"},
         {"clave": Perm.FACTURAS_CREAR, "descripcion": "Crear facturas"},
@@ -275,6 +303,22 @@ PERMISSIONS_BY_MODULE: dict[str, list[dict[str, str]]] = {
         {"clave": Perm.CONTABILIDAD_LEER, "descripcion": "Ver asientos y balances"},
         {"clave": Perm.CONTABILIDAD_ASIENTOS, "descripcion": "Crear asientos contables"},
         {"clave": Perm.CONTABILIDAD_PLAN_CUENTAS, "descripcion": "Gestionar plan de cuentas"},
+    ],
+    "carrito": [
+        {"clave": Perm.CARRITO_LEER, "descripcion": "Ver carrito de compra"},
+        {"clave": Perm.CARRITO_GESTIONAR, "descripcion": "Gestionar carrito (agregar/eliminar items)"},
+        {"clave": Perm.CARRITO_CONFIGURAR, "descripcion": "Configurar carrito/ventas (IVA, descuentos, etc.)"},
+    ],
+    "tienda": [
+        {"clave": Perm.TIENDA_LEER, "descripcion": "Ver tienda online"},
+        {"clave": Perm.TIENDA_GESTIONAR, "descripcion": "Gestionar productos en tienda online"},
+        {"clave": Perm.TIENDA_PEDIDOS_LEER, "descripcion": "Ver pedidos de tienda online"},
+        {"clave": Perm.TIENDA_PEDIDOS_GESTIONAR, "descripcion": "Gestionar pedidos de tienda online"},
+    ],
+    "automation": [
+        {"clave": Perm.AUTOMATION_LEER, "descripcion": "Ver panel de automatización"},
+        {"clave": Perm.AUTOMATION_EJECUTAR, "descripcion": "Ejecutar tareas de automatización"},
+        {"clave": Perm.AUTOMATION_CONFIGURAR, "descripcion": "Configurar el motor de automatización"},
     ],
 }
 
@@ -336,6 +380,15 @@ def _operador_perms() -> set[str]:
         Perm.REPORTES_EJECUTAR,
         Perm.REPORTES_GUARDAR,
         Perm.PUSH_ENVIAR,
+        # Carrito
+        Perm.CARRITO_LEER,
+        Perm.CARRITO_GESTIONAR,
+        # Tienda
+        Perm.TIENDA_LEER,
+        Perm.TIENDA_PEDIDOS_LEER,
+        # Automatización
+        Perm.AUTOMATION_LEER,
+        Perm.AUTOMATION_EJECUTAR,
     }
 
 

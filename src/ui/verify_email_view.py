@@ -1,4 +1,4 @@
-"""
+"""Email verification view, refactored for clarity.
 Email verification view — screen for entering verification token.
 
 Shown after user registration. Allows entering the token received
@@ -10,33 +10,35 @@ import asyncio
 import flet as ft
 
 from config.settings import THEME_PRIMARY_COLOR
+from core.theme_manager import theme_manager
 from ui.components import SnackBarHelper
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 
 async def show_verify_email(app, username: str = "", email: str = ""):
     """Display email verification form."""
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
 
     token_field = ft.TextField(
         label="Token de verificación",
         width=340,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=        palette["input_border"],
+        focused_border_color=        palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=        palette["input_fill"],
+        color=        palette["text_on_input"],
+        cursor_color=        palette["cursor"],
+        label_style=ft.TextStyle(color=        palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=        palette["text_muted"]),
+        text_style=ft.TextStyle(color=        palette["text_on_input"], size=14),
         hint_text="Pega el token de tu email",
         multiline=False,
     )
 
-    error_text = ft.Text("", color=C["accent"], size=12)
+    error_text = ft.Text("", color=        palette["accent"], size=12)
     success_text = ft.Text("", color="green", size=12)
 
     async def handle_verify(e):
@@ -59,7 +61,7 @@ async def show_verify_email(app, username: str = "", email: str = ""):
             from api.rest import VerifyEmailRequest, verify_email
 
             req = VerifyEmailRequest(token=token)
-            result = await verify_email(req)
+            await verify_email(req)
 
             success_text.value = "✓ Email verificado exitosamente. Ahora puedes iniciar sesión."
             SnackBarHelper.success(app.page, "Cuenta activada")
@@ -72,7 +74,7 @@ async def show_verify_email(app, username: str = "", email: str = ""):
 
         except Exception as ex:
             error_text.value = f"Error: {ex}"
-            SnackBarHelper.error(app.page, f"Error de verificación: {ex}")
+            SnackBarHelper.error(app.page, "Error de verificación. El código puede haber expirado.")
         finally:
             verify_btn.disabled = False
             app.page.update()
@@ -98,7 +100,8 @@ async def show_verify_email(app, username: str = "", email: str = ""):
 
     def go_back_to_login(e):
         """Navigate back to login screen."""
-        asyncio.create_task(app._show_login_screen())
+        task = asyncio.create_task(app._show_login_screen())
+        task.add_done_callback(lambda t: None)
 
     verify_btn = ft.Button(
         content=ft.Text("Verificar Cuenta"),
@@ -141,7 +144,7 @@ async def show_verify_email(app, username: str = "", email: str = ""):
                             ft.Text(
                                 "Revisa tu email y pega el token de verificación",
                                 size=12,
-                                color=C["text_muted"],
+                                color=        palette["text_muted"],
                                 text_align=ft.TextAlign.CENTER,
                             ),
                         ],
@@ -150,33 +153,33 @@ async def show_verify_email(app, username: str = "", email: str = ""):
                     ),
                     padding=ft.padding.Padding(left=0, right=0, top=0, bottom=10),
                 ),
-                ft.Divider(height=1, color=C["divider"]),
+                ft.Divider(height=1, color=        palette["divider"]),
                 ft.Container(height=5),
                 ft.Container(
                     content=ft.Column(
                         [
-                            ft.Icon(ft.icons.Icons.INFO_OUTLINE, size=20, color=C["text_muted"]),
+                            ft.Icon(ft.icons.Icons.INFO_OUTLINE, size=20, color=        palette["text_muted"]),
                             ft.Text(
                                 "Se envió un email de verificación a:",
                                 size=11,
-                                color=C["text_muted"],
+                                color=        palette["text_muted"],
                             ),
                             ft.Text(
                                 email or "tu email",
                                 size=12,
                                 weight=ft.FontWeight.BOLD,
-                                color=C["text_primary"],
+                                color=        palette["text_primary"],
                             ),
                             ft.Text(
                                 "El token expira en 24 horas",
                                 size=10,
-                                color=C["text_muted"],
+                                color=        palette["text_muted"],
                             ),
                         ],
                         spacing=4,
                     ),
                     padding=10,
-                    bgcolor=C["input_fill"],
+                    bgcolor=        palette["input_fill"],
                     border_radius=8,
                 ),
                 ft.Container(height=5),
@@ -191,10 +194,10 @@ async def show_verify_email(app, username: str = "", email: str = ""):
             spacing=10,
             width=card_width,
         ),
-        bgcolor=C["surface"],
+        bgcolor=        palette["surface"],
         padding=30,
         border_radius=16,
-        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=C["shadow"]),
+        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=        palette["shadow"]),
     )
 
     verify_container = ft.Container(
@@ -207,8 +210,8 @@ async def show_verify_email(app, username: str = "", email: str = ""):
             expand=True,
         ),
         expand=True,
-        bgcolor=C["background"],
-        alignment=ft.alignment.center,
+        bgcolor=        palette["background"],
+        alignment=ft.alignment.Alignment.CENTER,
     )
 
     if app.main_view:

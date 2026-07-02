@@ -1,4 +1,4 @@
-"""HR views for human resources management.
+"""HR views for human resources management, refactored for clarity.
 
 Provides UI for employees, payroll, attendance, vacations, and evaluations.
 """
@@ -7,19 +7,22 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+)
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
+
+logger = get_logger(__name__)
 
 
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+def _c(app):
+    """Get the active color palette."""
+    return theme_manager.palette(page=app.page)
 
 
 # ============ Empleados ============
@@ -27,7 +30,7 @@ def _fmt_money(v) -> str:
 
 async def show_empleados(app):
     """Display employees management view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     dept_filter = ft.Dropdown(
@@ -35,8 +38,8 @@ async def show_empleados(app):
         options=[ft.dropdown.Option(key="", text="Todos")],
         value="",
         width=200,
-        fill_color="#F8FAFC",
-        color="#0F172A",
+        fill_color=c["input_fill"],
+        color=c["text_primary"],
     )
 
     async def refresh():
@@ -45,13 +48,14 @@ async def show_empleados(app):
             dept_filter.options = [ft.dropdown.Option(key="", text="Todos")] + [
                 ft.dropdown.Option(key=d, text=d) for d in departamentos
             ]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Error al obtener departamentos: %s", e)
 
         departamento = dept_filter.value or None
         try:
             empleados = await controller.obtener_empleados(departamento=departamento)
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener empleados: %s", e)
             empleados = []
 
         rows = []
@@ -96,14 +100,14 @@ async def show_empleados(app):
                 ft.DataColumn(ft.Text("Acciones")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay empleados registrados", color="#475569"),
+                content=ft.Text("No hay empleados registrados", color=c["text_secondary"]),
                 padding=40,
             )
         )

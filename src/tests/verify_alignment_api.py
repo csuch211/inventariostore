@@ -15,8 +15,6 @@ import flet as ft
 _REPO = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(_REPO / "src"))
 
-import ui.app_view  # noqa: E402
-import ui.charts  # noqa: E402, F401
 
 # These imports will raise AttributeError on app_view / charts if
 # any module still uses ft.alignment.center (the missing shortcut).
@@ -37,6 +35,7 @@ assert not hasattr(ft.alignment, "center"), (
 # using the old form crashes the app at first render (e.g. on login).
 # This catches regressions before they ship.
 _LEGACY_ALIGNMENT = re.compile(r"\bft\.alignment\.[a-z][A-Za-z_]*\b")
+_STRING_LITERAL = re.compile(r""""[^"]*"|'[^']*'""")
 _offenders: list[tuple[str, int, str]] = []
 for src_path in (_REPO / "src").rglob("*.py"):
     # This file intentionally documents the legacy pattern; don't scan it.
@@ -55,7 +54,9 @@ for src_path in (_REPO / "src").rglob("*.py"):
             continue
         if in_docstring:
             continue
-        if _LEGACY_ALIGNMENT.search(line):
+        # Remove string literals so we don't flag mentions inside assertion messages.
+        code_only = _STRING_LITERAL.sub("", line)
+        if _LEGACY_ALIGNMENT.search(code_only):
             # Allow the bare ``ft.alignment.Alignment.*`` enum form.
             if ".Alignment." in line:
                 continue

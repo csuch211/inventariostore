@@ -49,7 +49,7 @@ class AccountingController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating journal entry: {e}")
+            logger.exception(f"Error creating journal entry: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CONTABILIDAD_LEER)
@@ -58,7 +58,7 @@ class AccountingController:
         try:
             return self.db.accounting_repo.obtener_asiento(asiento_id)
         except Exception as e:
-            logger.error(f"Error fetching journal entry: {e}")
+            logger.exception(f"Error fetching journal entry: {e}")
             return None
 
     @require_permission(Perm.CONTABILIDAD_LEER)
@@ -69,7 +69,7 @@ class AccountingController:
         try:
             return self.db.accounting_repo.obtener_asientos(fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
         except Exception as e:
-            logger.error(f"Error fetching journal entries: {e}")
+            logger.exception(f"Error fetching journal entries: {e}")
             return []
 
     @require_permission(Perm.CONTABILIDAD_PLAN_CUENTAS)
@@ -78,7 +78,7 @@ class AccountingController:
         try:
             return self.db.accounting_repo.obtener_plan_cuentas(tipo=tipo)
         except Exception as e:
-            logger.error(f"Error fetching chart of accounts: {e}")
+            logger.exception(f"Error fetching chart of accounts: {e}")
             return []
 
     @require_permission(Perm.CONTABILIDAD_LEER)
@@ -91,7 +91,7 @@ class AccountingController:
                 fecha_inicio=fecha_inicio, fecha_fin=fecha_fin
             )
         except Exception as e:
-            logger.error(f"Error fetching trial balance: {e}")
+            logger.exception(f"Error fetching trial balance: {e}")
             return []
 
     @require_permission(Perm.CONTABILIDAD_ASIENTOS)
@@ -122,5 +122,5 @@ class AccountingController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating sale journal entry: {e}")
+            logger.exception(f"Error creating sale journal entry: {e}")
             return False, {"error": str(e)}

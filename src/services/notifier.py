@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from services.database import DatabaseManager
+from utils.crypto import decrypt_value
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -18,7 +19,7 @@ def get_smtp_config(db: DatabaseManager) -> dict[str, str]:
         "host": db.obtener_config("smtp_host", ""),
         "port": db.obtener_config("smtp_port", "587"),
         "user": db.obtener_config("smtp_user", ""),
-        "password": db.obtener_config("smtp_password", ""),
+        "password": decrypt_value(db.obtener_config("smtp_password", "")),
         "from_email": db.obtener_config("smtp_from_email", ""),
         "to_email": db.obtener_config("smtp_to_email", ""),
         "enabled": db.obtener_config("notify_low_stock", "no"),

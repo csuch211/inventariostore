@@ -79,3 +79,41 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         self._requests[client_ip].append(now)
         return await call_next(request)
+
+
+class LoginRateLimiter:
+    """Stricter rate limiter for login endpoints.
+
+    Limits login attempts per IP to prevent brute force attacks.
+    Uses a sliding window counter approach.
+    """
+
+    def __init__(self, max_attempts: int = 5, window_seconds: int = 60):
+        self.max_attempts = max_attempts
+        self.window_seconds = window_seconds
+        self._attempts: dict[str, list[float]] = defaultdict(list)
+
+    def check(self, client_ip: str) -> bool:
+        """Check if login attempt is allowed. Returns True if allowed, False if rate limited."""
+        now = time.time()
+
+        # Clean old entries outside the window
+        self._attempts[client_ip] = [
+            t for t in self._attempts[client_ip] if now - t < self.window_seconds
+        ]
+
+        if len(self._attempts[client_ip]) >= self.max_attempts:
+            logger.warning(
+                "Login rate limit exceeded for %s: %d attempts in %ds",
+                client_ip,
+                len(self._attempts[client_ip]),
+                self.window_seconds,
+            )
+            return False
+
+        self._attempts[client_ip].append(now)
+        return True
+
+
+# Global login rate limiter instance
+login_rate_limiter = LoginRateLimiter(max_attempts=5, window_seconds=60)

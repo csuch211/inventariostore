@@ -38,7 +38,7 @@ class BaseRepository:
             self._local.conn = conn
             return conn
         except sqlite3.Error as e:
-            logger.error(f"Database connection error: {e}")
+            logger.exception(f"Database connection error: {e}")
             raise DatabaseException(f"Connection failed: {e}")
 
     def close_connections(self) -> None:

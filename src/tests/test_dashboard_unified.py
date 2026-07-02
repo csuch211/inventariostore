@@ -48,9 +48,9 @@ TMP_DB_DIR = Path(tempfile.mkdtemp(prefix="inv_dash_test_"))
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
-import config.settings as _settings  # noqa: E402
-from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
+import config.settings as _settings
+from core.controller import InventarioController
+from services.permissions import ALL_PERMISSION_KEYS
 
 _settings.DATABASE_FILE = _settings.DATABASE_PATH / "inventario_dash_test.db"
 if _settings.DATABASE_FILE.exists():

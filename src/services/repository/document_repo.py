@@ -1,5 +1,6 @@
 """Document repository for document management operations."""
 
+import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
@@ -75,7 +76,7 @@ class DocumentRepository(BaseRepository):
         tipo: str = "documento",
         archivo_nombre: str = "",
         archivo_ruta: str = "",
-        archivo_tamaño: int = 0,
+        archivo_tamano: int = 0,
         mime_type: str = "",
         tags: str = "",
         visibilidad: str = "privado",
@@ -89,11 +90,11 @@ class DocumentRepository(BaseRepository):
                 cursor = conn.execute(
                     """INSERT INTO documentos
                        (titulo, descripcion, categoria_id, tipo, archivo_nombre,
-                        archivo_ruta, archivo_tamaño, mime_type, tags, visibilidad,
+                        archivo_ruta, archivo_tamano, mime_type, tags, visibilidad,
                         autor, creado_en, actualizado_en)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (titulo, descripcion, categoria_id, tipo, archivo_nombre,
-                     archivo_ruta, archivo_tamaño, mime_type, tags, visibilidad,
+                     archivo_ruta, archivo_tamano, mime_type, tags, visibilidad,
                      usuario, now, now),
                 )
                 documento_id = cursor.lastrowid
@@ -102,9 +103,9 @@ class DocumentRepository(BaseRepository):
                 conn.execute(
                     """INSERT INTO versiones_documento
                        (documento_id, numero_version, archivo_nombre, archivo_ruta,
-                        archivo_tamaño, cambios, autor, creado_en)
+                        archivo_tamano, cambios, autor, creado_en)
                        VALUES (?, 1, ?, ?, ?, ?, ?, ?)""",
-                    (documento_id, archivo_nombre, archivo_ruta, archivo_tamaño,
+                    (documento_id, archivo_nombre, archivo_ruta, archivo_tamano,
                      "Versión inicial", usuario, now),
                 )
 
@@ -164,6 +165,11 @@ class DocumentRepository(BaseRepository):
                     where.append("d.autor = ?")
                     params.append(autor)
 
+                _allowed_columns = {"d.categoria_id", "d.tipo", "d.estado", "d.autor"}
+                for clause in where:
+                    col = clause.split(None, 1)[0]
+                    if col not in _allowed_columns:
+                        raise ValueError(f"Columna no permitida en WHERE: {col}")
                 where_clause = " AND ".join(where) if where else "1=1"
                 cursor = conn.execute(
                     f"""SELECT d.*, cd.nombre as categoria_nombre
@@ -243,7 +249,7 @@ class DocumentRepository(BaseRepository):
         documento_id: int,
         archivo_nombre: str = "",
         archivo_ruta: str = "",
-        archivo_tamaño: int = 0,
+        archivo_tamano: int = 0,
         cambios: str = "",
         usuario: str = "system",
     ) -> dict:
@@ -263,10 +269,10 @@ class DocumentRepository(BaseRepository):
                 conn.execute(
                     """INSERT INTO versiones_documento
                        (documento_id, numero_version, archivo_nombre, archivo_ruta,
-                        archivo_tamaño, cambios, autor, creado_en)
+                        archivo_tamano, cambios, autor, creado_en)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                     (documento_id, new_version, archivo_nombre, archivo_ruta,
-                     archivo_tamaño, cambios, usuario, now),
+                     archivo_tamano, cambios, usuario, now),
                 )
 
                 # Update document version

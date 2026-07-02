@@ -20,6 +20,11 @@ For more details on running the app, refer to the [Getting Started Guide](https:
 
 ## Build the app
 
+def _verify_legacy(stored: str, password: str) -> bool:
+    logger.warning("User authenticated with legacy salt - consider updating the password")
+    candidate = _hash_with_salt(password, _LEGACY_SALT)
+    return hmac.compare_digest(stored, candidate)
+
 ### Android
 
 ```bash

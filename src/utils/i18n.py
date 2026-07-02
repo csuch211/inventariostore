@@ -6,6 +6,8 @@ Loads JSON dictionaries from utils/translations/ and exposes
 a global `t(key)` function plus a LangSwitcher component for UI.
 """
 
+from __future__ import annotations
+
 import json
 import locale
 import sys
@@ -32,7 +34,7 @@ def detect_system_language() -> str:
         # locale.getdefaultlocale() is deprecated in 3.13+ and will be removed.
         try:
             system_locale = locale.getlocale()[0] or ""
-        except AttributeError, ValueError:
+        except (AttributeError, ValueError):
             system_locale = ""
         if not system_locale:
             # Fall back to env vars

@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime
 
 from services.repository.base import BaseRepository
-from utils.exceptions import DatabaseException
+from utils.exceptions import DatabaseException, ProductNotFoundError, StockInsufficientError
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -14,6 +14,7 @@ logger = setup_logger(__name__)
 
 class SaleRepository(BaseRepository):
     def crear_cliente(self, nombre, telefono="", email="", direccion="", usuario="system") -> int:
+        """Create a new customer."""
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:
@@ -36,6 +37,7 @@ class SaleRepository(BaseRepository):
             raise DatabaseException(f"Failed to create customer: {e}")
 
     def obtener_clientes(self) -> list[dict]:
+        """List all active customers."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute("SELECT * FROM clientes WHERE activo = 1 ORDER BY nombre")
@@ -44,6 +46,7 @@ class SaleRepository(BaseRepository):
             raise DatabaseException(f"Failed to fetch customers: {e}")
 
     def obtener_cliente_por_id(self, cliente_id: int) -> dict | None:
+        """Get customer by ID."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute("SELECT * FROM clientes WHERE id = ?", (cliente_id,))
@@ -55,6 +58,7 @@ class SaleRepository(BaseRepository):
     def actualizar_cliente(
         self, cliente_id, nombre, telefono="", email="", direccion="", usuario="system"
     ) -> int:
+        """Update customer information."""
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:
@@ -119,11 +123,27 @@ class SaleRepository(BaseRepository):
                             item["subtotal"],
                         ),
                     )
-                    conn.execute(
+                    # Validate stock before deducting
+                    cursor_stock = conn.execute(
+                        "SELECT cantidad FROM productos WHERE id = ?", (item["producto_id"],)
+                    )
+                    row = cursor_stock.fetchone()
+                    if not row:
+                        raise ProductNotFoundError(f"Product {item['producto_id']} not found")
+                    if row["cantidad"] < item["cantidad"]:
+                        raise StockInsufficientError(
+                            f"Insufficient stock for product {item['producto_id']}: "
+                            f"available {row['cantidad']}, needed {item['cantidad']}"
+                        )
+                    cursor = conn.execute(
                         """UPDATE productos SET cantidad = cantidad - ?, actualizado_en = ?, actualizado_por = ?
                            WHERE id = ? AND cantidad >= ?""",
                         (item["cantidad"], now, usuario, item["producto_id"], item["cantidad"]),
                     )
+                    if cursor.rowcount == 0:
+                        raise StockInsufficientError(
+                            f"Insufficient stock for product {item['producto_id']}"
+                        )
                     conn.execute(
                         """INSERT INTO historial_stock (producto_id, cantidad_anterior, cantidad_nueva, tipo_movimiento, razon, creado_en, usuario)
                            VALUES (?, (SELECT cantidad + ? FROM productos WHERE id = ?), (SELECT cantidad FROM productos WHERE id = ?), 'salida', ?, ?, ?)""",
@@ -152,6 +172,7 @@ class SaleRepository(BaseRepository):
             raise DatabaseException(f"Failed to create sale: {e}")
 
     def obtener_ventas(self, limit=100) -> list[dict]:
+        """List recent sales with customer name."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute(
@@ -168,6 +189,7 @@ class SaleRepository(BaseRepository):
             raise DatabaseException(f"Failed to fetch sales: {e}")
 
     def obtener_venta_por_id(self, venta_id: int) -> dict | None:
+        """Get sale by ID with details and payments."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.execute(
@@ -204,11 +226,27 @@ class SaleRepository(BaseRepository):
         now = datetime.now().isoformat()
         try:
             with self._get_connection() as conn:
-                venta = self.obtener_venta_por_id(venta_id)
-                if not venta:
+                cursor = conn.execute(
+                    """SELECT v.*, c.nombre as cliente_nombre, c.telefono as cliente_telefono
+                       FROM ventas v
+                       LEFT JOIN clientes c ON v.cliente_id = c.id
+                       WHERE v.id = ?""",
+                    (venta_id,),
+                )
+                row = cursor.fetchone()
+                if not row:
                     raise DatabaseException("Venta no encontrada")
+                venta = dict(row)
                 if venta["estado"] == "cancelada":
                     raise DatabaseException("La venta ya fue cancelada")
+                cursor2 = conn.execute(
+                    """SELECT vd.*, p.nombre as producto_nombre, p.codigo as producto_codigo
+                       FROM ventas_detalle vd
+                       LEFT JOIN productos p ON vd.producto_id = p.id
+                       WHERE vd.venta_id = ?""",
+                    (venta_id,),
+                )
+                venta["detalles"] = [dict(r) for r in cursor2.fetchall()]
 
                 conn.execute(
                     "UPDATE ventas SET estado = 'cancelada', actualizado_en = ? WHERE id = ?",
@@ -258,5 +296,6 @@ class SaleRepository(BaseRepository):
                     (today, today),
                 )
                 return dict(cursor.fetchone())
-        except sqlite3.Error:
-            return {"total_ventas": 0, "ingresos_totales": 0, "ingresos_hoy": 0, "ventas_hoy": 0}
+        except sqlite3.Error as e:
+            logger.exception("Error al obtener estadísticas de ventas: %s", e)
+            raise DatabaseException(f"Failed to fetch sales stats: {e}")

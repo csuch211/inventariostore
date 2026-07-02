@@ -1,4 +1,4 @@
-"""Inventory views for comprehensive inventory management.
+"""Inventory views for comprehensive inventory management, refactored for clarity.
 
 Provides UI for stock analysis, ABC analysis, turnover, aging, and valuation.
 """
@@ -7,20 +7,19 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from core.theme_manager import theme_manager
 from services.inventory_report_export import InventoryReportExporter
 from ui.components import AppHeader, SnackBarHelper
-from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
 
-
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
 
 
 # ============ Análisis ABC ============
@@ -28,13 +27,14 @@ def _fmt_money(v) -> str:
 
 async def show_abc_analysis(app):
     """Display ABC analysis view."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             productos = await controller.analisis_abc()
-        except Exception:
+        except Exception as e:
+            logger.error("Error en análisis ABC: %s", e)
             productos = []
 
         # Summary cards
@@ -131,8 +131,8 @@ async def show_abc_analysis(app):
             exporter = InventoryReportExporter()
             path = exporter.export_abc_analysis(productos)
             SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar el análisis ABC.")
 
     export_btn = ft.Button(
         content=ft.Row([
@@ -151,19 +151,20 @@ async def show_abc_analysis(app):
 
 async def show_inventory_turnover(app):
     """Display inventory turnover analysis."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             turnover = await controller.calcular_rotacion()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al calcular rotación: %s", e)
             turnover = {}
 
         turnover_ratio = turnover.get("turnover_ratio", 0)
         days_of_supply = turnover.get("days_of_supply", 0)
         risk = turnover.get("stockout_risk", "low")
-        total_stock = turnover.get("total_stock", 0)
+        turnover.get("total_stock", 0)
         total_value = turnover.get("total_value", 0)
 
         risk_color = {
@@ -210,13 +211,14 @@ async def show_inventory_turnover(app):
 
 async def show_inventory_aging(app):
     """Display inventory aging analysis."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             productos = await controller.analisis_envejecimiento()
-        except Exception:
+        except Exception as e:
+            logger.error("Error en análisis de envejecimiento: %s", e)
             productos = []
 
         # Summary
@@ -325,13 +327,14 @@ async def show_inventory_aging(app):
 
 async def show_stockout_risk(app):
     """Display stockout risk analysis."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             productos = await controller.riesgo_agotamiento()
-        except Exception:
+        except Exception as e:
+            logger.error("Error en riesgo de agotamiento: %s", e)
             productos = []
 
         # Summary

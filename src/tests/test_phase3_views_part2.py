@@ -1,5 +1,5 @@
 """
-Tests for the optimizations and behavior of src/ui/phase3_views_part2.py.
+Tests for the optimizations and behavior of src/ui/notifications_image_views.py.
 
 Covers:
   - show_push_queue: ListView rendering, job cards, batched page.update,
@@ -54,20 +54,20 @@ TMP_DB_DIR = Path(tempfile.mkdtemp(prefix="inv_p3ui_test_"))
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
-import config.settings as _settings  # noqa: E402
+import config.settings as _settings
 
 _settings.DATABASE_FILE = _settings.DATABASE_PATH / "inventario_p3ui_test.db"
 if _settings.DATABASE_FILE.exists():
     _settings.DATABASE_FILE.unlink()
 
-import flet as ft  # noqa: E402
+import flet as ft
 
-from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
+from core.controller import InventarioController
+from services.permissions import ALL_PERMISSION_KEYS
 
 # Force a fresh import of the module under test (so module-level singletons
 # are not carried over from any earlier run in the same interpreter).
-p3v2 = importlib.import_module("ui.phase3_views_part2")
+p3v2 = importlib.import_module("ui.notifications_image_views")
 importlib.reload(p3v2)
 
 

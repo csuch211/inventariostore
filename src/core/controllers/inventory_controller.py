@@ -44,7 +44,7 @@ class InventoryController:
         try:
             return self.db.obtener_producto_por_id(producto_id)
         except Exception as e:
-            logger.error(f"Error fetching product stock: {e}")
+            logger.exception(f"Error fetching product stock: {e}")
             return None
 
     @require_permission(Perm.STOCK_ACTUALIZAR)
@@ -62,7 +62,7 @@ class InventoryController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error adjusting stock: {e}")
+            logger.exception(f"Error adjusting stock: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.STOCK_LEER)
@@ -71,7 +71,7 @@ class InventoryController:
         try:
             return self.db.obtener_historial_stock(producto_id)
         except Exception as e:
-            logger.error(f"Error fetching stock history: {e}")
+            logger.exception(f"Error fetching stock history: {e}")
             return []
 
     # ============ Warehouse Management ============
@@ -82,7 +82,7 @@ class InventoryController:
         try:
             return self.db.obtener_almacenes()
         except Exception as e:
-            logger.error(f"Error fetching warehouses: {e}")
+            logger.exception(f"Error fetching warehouses: {e}")
             return []
 
     @require_permission(Perm.ALMACENES_GESTIONAR)
@@ -94,7 +94,7 @@ class InventoryController:
             )
             return True, result
         except Exception as e:
-            logger.error(f"Error creating warehouse: {e}")
+            logger.exception(f"Error creating warehouse: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.ALMACENES_STOCK)
@@ -103,7 +103,7 @@ class InventoryController:
         try:
             return self.db.obtener_inventario_almacen(almacen_id)
         except Exception as e:
-            logger.error(f"Error fetching warehouse inventory: {e}")
+            logger.exception(f"Error fetching warehouse inventory: {e}")
             return []
 
     # ============ Inventory Analysis ============
@@ -115,7 +115,7 @@ class InventoryController:
             productos = self.db.obtener_todos_productos()
             return analisis_abc(productos)
         except Exception as e:
-            logger.error(f"Error performing ABC analysis: {e}")
+            logger.exception(f"Error performing ABC analysis: {e}")
             return []
 
     @require_permission(Perm.STOCK_LEER)
@@ -127,7 +127,7 @@ class InventoryController:
             ventas = self.db.obtener_ventas()
             return calcular_rotacion_inventario(productos, ventas)
         except Exception as e:
-            logger.error(f"Error calculating turnover: {e}")
+            logger.exception(f"Error calculating turnover: {e}")
             return {"turnover_ratio": 0, "days_of_supply": 0, "stockout_risk": "unknown"}
 
     @require_permission(Perm.STOCK_LEER)
@@ -137,7 +137,7 @@ class InventoryController:
             productos = self.db.obtener_todos_productos()
             return analisis_envejecimiento(productos)
         except Exception as e:
-            logger.error(f"Error performing aging analysis: {e}")
+            logger.exception(f"Error performing aging analysis: {e}")
             return []
 
     @require_permission(Perm.STOCK_LEER)
@@ -147,7 +147,7 @@ class InventoryController:
             productos = self.db.obtener_todos_productos()
             return calcular_riesgo_agotamiento(productos)
         except Exception as e:
-            logger.error(f"Error calculating stockout risk: {e}")
+            logger.exception(f"Error calculating stockout risk: {e}")
             return []
 
     @require_permission(Perm.STOCK_LEER)
@@ -157,7 +157,7 @@ class InventoryController:
             productos = self.db.obtener_todos_productos()
             return calcular_valor_inventario(productos, metodo)
         except Exception as e:
-            logger.error(f"Error calculating inventory valuation: {e}")
+            logger.exception(f"Error calculating inventory valuation: {e}")
             return {"total_value": 0, "total_quantity": 0, "average_cost": 0}
 
     # ============ Inventory Reports ============
@@ -202,5 +202,5 @@ class InventoryController:
                 "valuation": valuation,
             }
         except Exception as e:
-            logger.error(f"Error generating inventory report: {e}")
+            logger.exception(f"Error generating inventory report: {e}")
             return {}

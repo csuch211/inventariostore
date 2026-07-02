@@ -1,27 +1,25 @@
-"""Financial reports views.
+"""Financial reports views, refactored for clarity.
 
 Provides UI for P&L, balance sheet, cash flow, and financial dashboards.
 """
 
 import asyncio
-from datetime import datetime, timedelta
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
+from core.theme_manager import theme_manager
 from services.financial_report_export import FinancialReportExporter
-from ui.components import AppHeader, FormField, SnackBarHelper
-from utils.i18n import t
-from utils.logger import setup_logger
+from ui.components import AppHeader, SnackBarHelper
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
 
-
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
 
 
 # ============ Dashboard Financiero ============
@@ -29,7 +27,7 @@ def _fmt_money(v) -> str:
 
 async def show_financial_dashboard(app):
     """Display financial dashboard with key metrics."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
@@ -55,11 +53,13 @@ async def show_financial_dashboard(app):
                 stats = await controller.obtener_estadisticas_ventas()
                 ventas_hoy = stats.get("ingresos_hoy", 0)
                 ventas_mes = stats.get("ingresos_totales", 0)
-            except Exception:
+            except Exception as e:
+                logger.error("Error al obtener estadísticas de ventas: %s", e)
                 ventas_hoy = 0
                 ventas_mes = 0
 
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener balance/comprobación: %s", e)
             ingresos = gastos = utilidad_neta = 0
             activos = pasivos = patrimonio = 0
             ventas_hoy = ventas_mes = 0
@@ -127,8 +127,8 @@ async def show_financial_dashboard(app):
             exporter = FinancialReportExporter()
             path = exporter.export_dashboard_financiero(balance)
             SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar el reporte.")
 
     await refresh()
 
@@ -138,13 +138,14 @@ async def show_financial_dashboard(app):
 
 async def show_estado_resultados(app):
     """Display Profit & Loss statement."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             balance = await controller.obtener_balance_comprobacion()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener balance (P&L): %s", e)
             balance = []
 
         # Group by account type
@@ -238,8 +239,8 @@ async def show_estado_resultados(app):
             exporter = FinancialReportExporter()
             path = exporter.export_estado_resultados(balance)
             SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar el reporte.")
 
     await refresh()
 
@@ -249,13 +250,14 @@ async def show_estado_resultados(app):
 
 async def show_balance_general(app):
     """Display balance sheet."""
-    C = app._get_colors()
+    theme_manager.palette(page=app.page)
     controller = app.controller
 
     async def refresh():
         try:
             balance = await controller.obtener_balance_comprobacion()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener balance general: %s", e)
             balance = []
 
         activos = [(b["cuenta_codigo"], b["cuenta_nombre"], b.get("total_debito", 0))
@@ -332,7 +334,7 @@ async def show_balance_general(app):
             exporter = FinancialReportExporter()
             path = exporter.export_balance_general(balance)
             SnackBarHelper.success(app.page, f"PDF exportado: {path.name}")
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error exportando: {ex}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar el reporte.")
 
     await refresh()

@@ -83,6 +83,22 @@ ROUTE_PERMISSIONS = {
     # Notificaciones
     "notificaciones": Perm.NOTIFICACIONES_CONFIGURAR,
     "plantillas_notificacion": Perm.NOTIFICACIONES_CONFIGURAR,
+    # Mensajería
+    "messaging": Perm.WHATSAPP_CONFIGURAR,
+    # Carrito de compra
+    "cart": Perm.CARRITO_LEER,
+    "cart_config": Perm.CARRITO_CONFIGURAR,
+    # Tienda online
+    "store": Perm.TIENDA_LEER,
+    "store_config": Perm.TIENDA_GESTIONAR,
+    "store_products": Perm.TIENDA_GESTIONAR,
+    "store_orders": Perm.TIENDA_PEDIDOS_LEER,
+    # Automatización
+    "automation": Perm.AUTOMATION_LEER,
+    "automation_abc": Perm.AUTOMATION_LEER,
+    "automation_forecasts": Perm.AUTOMATION_LEER,
+    "automation_segments": Perm.AUTOMATION_LEER,
+    "automation_pricing": Perm.AUTOMATION_LEER,
 }
 
 NAV_DATA_ALL = [
@@ -106,7 +122,7 @@ NAV_DATA_ALL = [
     ),
     ("warehouses", ft.icons.Icons.WAREHOUSE, t("nav.warehouses"), None),
     ("stock", ft.icons.Icons.INVENTORY_OUTLINED, t("nav.stock"), None),
-    ("scanner", ft.icons.Icons.QR_CODE_SCANNER, "Escáner", None),
+    ("scanner", ft.icons.Icons.QR_CODE_SCANNER, t("nav.scanner"), None),
     ("export", ft.icons.Icons.FILE_DOWNLOAD_OUTLINED, t("nav.export"), None),
     ("backups", ft.icons.Icons.BACKUP, t("nav.backups"), None),
     ("users", ft.icons.Icons.ADMIN_PANEL_SETTINGS, t("nav.users"), None),
@@ -138,32 +154,36 @@ NAV_DATA_ALL = [
     ("p3_push", ft.icons.Icons.NOTIFICATIONS_ACTIVE, t("phase3.push.title"), None),
     ("p3_image_search", ft.icons.Icons.IMAGE_SEARCH, t("phase3.image_search.title"), None),
     # Facturación
-    ("facturas", ft.icons.Icons.RECEIPT, "Facturas", None),
-    # Contabilidad
-    ("asientos", ft.icons.Icons.BOOK, "Asientos Contables", None),
-    ("plan_cuentas", ft.icons.Icons.ACCOUNT_TREE, "Plan de Cuentas", None),
-    ("balance", ft.icons.Icons.BALANCE, "Balance Comprobación", None),
-    # Reportes Financieros
-    ("financial_dashboard", ft.icons.Icons.ANALYTICS, "Dashboard Financiero", None),
-    ("estado_resultados", ft.icons.Icons.ASSESSMENT, "Estado de Resultados", None),
-    ("balance_general", ft.icons.Icons.BALANCE, "Balance General", None),
-    # Análisis de Inventario
-    ("abc_analysis", ft.icons.Icons.PIE_CHART, "Análisis ABC", None),
-    ("inventory_turnover", ft.icons.Icons.REFRESH, "Rotación Inventario", None),
-    ("inventory_aging", ft.icons.Icons.HOURGLASS_EMPTY, "Envejecimiento", None),
-    ("stockout_risk", ft.icons.Icons.WARNING, "Riesgo Agotamiento", None),
-    # RRHH
-    ("empleados", ft.icons.Icons.PEOPLE, "Empleados", None),
-    # Compras
-    ("cotizaciones", ft.icons.Icons.DESCRIPTION, "Cotizaciones", None),
-    # CRM
-    ("contactos", ft.icons.Icons.CONTACTS, "Contactos CRM", None),
-    ("pipeline", ft.icons.Icons.PIPELINE, "Pipeline Ventas", None),
-    # Documentos
-    ("documentos", ft.icons.Icons.FOLDER_COPY, "Documentos", None),
-    # Notificaciones
-    ("notificaciones", ft.icons.Icons.NOTIFICATIONS, "Notificaciones", None),
-    ("plantillas_notificacion", ft.icons.Icons.EMAIL_TEMPLATES, "Plantillas Email", None),
+    ("facturas", ft.icons.Icons.RECEIPT, t("nav.facturas"), None),
+    ("asientos", ft.icons.Icons.BOOK, t("nav.asientos"), None),
+    ("plan_cuentas", ft.icons.Icons.ACCOUNT_TREE, t("nav.plan_cuentas"), None),
+    ("balance", ft.icons.Icons.BALANCE, t("nav.balance"), None),
+    ("financial_dashboard", ft.icons.Icons.ANALYTICS, t("nav.financial_dashboard"), None),
+    ("estado_resultados", ft.icons.Icons.ASSESSMENT, t("nav.estado_resultados"), None),
+    ("balance_general", ft.icons.Icons.BALANCE, t("nav.balance_general"), None),
+    ("abc_analysis", ft.icons.Icons.PIE_CHART, t("nav.abc_analysis"), None),
+    ("inventory_turnover", ft.icons.Icons.REFRESH, t("nav.inventory_turnover"), None),
+    ("inventory_aging", ft.icons.Icons.HOURGLASS_EMPTY, t("nav.inventory_aging"), None),
+    ("stockout_risk", ft.icons.Icons.WARNING, t("nav.stockout_risk"), None),
+    ("empleados", ft.icons.Icons.PEOPLE, t("nav.empleados"), None),
+    ("cotizaciones", ft.icons.Icons.DESCRIPTION, t("nav.cotizaciones"), None),
+    ("contactos", ft.icons.Icons.CONTACTS, t("nav.contactos"), None),
+    ("pipeline", ft.icons.Icons.TRENDING_UP, t("nav.pipeline"), None),
+    ("documentos", ft.icons.Icons.FOLDER_COPY, t("nav.documentos"), None),
+    ("notificaciones", ft.icons.Icons.NOTIFICATIONS, t("nav.notificaciones"), None),
+    ("plantillas_notificacion", ft.icons.Icons.DRAFTS, t("nav.plantillas_notificacion"), None),
+    ("messaging", ft.icons.Icons.SEND, t("nav.messaging"), None),
+    ("automation", ft.icons.Icons.AUTO_AWESOME, t("nav.automation"), None),
+    ("automation_abc", ft.icons.Icons.PIE_CHART, t("nav.automation_abc"), None),
+    ("automation_forecasts", ft.icons.Icons.TRENDING_UP, t("nav.automation_forecasts"), None),
+    ("automation_segments", ft.icons.Icons.GROUPS, t("nav.automation_segments"), None),
+    ("automation_pricing", ft.icons.Icons.ATTACH_MONEY, t("nav.automation_pricing"), None),
+    ("cart", ft.icons.Icons.SHOPPING_CART_OUTLINED, t("nav.cart"), None),
+    ("cart_config", ft.icons.Icons.TUNE, t("nav.cart_config"), None),
+    ("store", ft.icons.Icons.STORE, t("nav.store"), None),
+    ("store_config", ft.icons.Icons.SETTINGS_OUTLINED, t("nav.store_config"), None),
+    ("store_products", ft.icons.Icons.INVENTORY_2, t("nav.store_products"), None),
+    ("store_orders", ft.icons.Icons.RECEIPT_LONG_OUTLINED, t("nav.store_orders"), None),
 ]
 
 SECTIONS_DEF = [
@@ -204,6 +224,10 @@ SECTIONS_DEF = [
             "p3_reportes",
             "p3_push",
             "p3_image_search",
+            "abc_analysis",
+            "inventory_turnover",
+            "inventory_aging",
+            "stockout_risk",
         ],
     ),
     (
@@ -219,18 +243,13 @@ SECTIONS_DEF = [
         ],
     ),
     (
-        "sidebar.section.inventory_analysis",
-        [
-            "abc_analysis",
-            "inventory_turnover",
-            "inventory_aging",
-            "stockout_risk",
-        ],
-    ),
-    (
-        "sidebar.section.hr",
+        "sidebar.section.business",
         [
             "empleados",
+            "cotizaciones",
+            "contactos",
+            "pipeline",
+            "documentos",
         ],
     ),
     (
@@ -257,6 +276,28 @@ SECTIONS_DEF = [
         [
             "notificaciones",
             "plantillas_notificacion",
+            "messaging",
+        ],
+    ),
+    (
+        "sidebar.section.store",
+        [
+            "cart",
+            "cart_config",
+            "store",
+            "store_config",
+            "store_products",
+            "store_orders",
+        ],
+    ),
+    (
+        "sidebar.section.automation",
+        [
+            "automation",
+            "automation_abc",
+            "automation_forecasts",
+            "automation_segments",
+            "automation_pricing",
         ],
     ),
     (
@@ -271,14 +312,14 @@ SECTIONS_DEF = [
     ),
 ]
 
-MOBILE_TOP_KEYS = [
+MOBILE_TOP_KEYS = (
     "dashboard",
     "products",
     "sales",
     "stock_alerts",
     "stock",
     "categories",
-]
+)
 
 
 def build_sidebar_desktop(
@@ -286,28 +327,29 @@ def build_sidebar_desktop(
     nav_data: list,
     sections_def: list,
     nav_index: dict,
-    C: dict,
+    palette: dict,
     sidebar_state: dict,
+    width: int = 240,
 ) -> ft.Container:
     """Build the desktop sidebar with sections, search, user card, lang switcher."""
 
     ls = LangSwitcher.create(
         on_change=lambda lang: asyncio.create_task(app._refresh_nav_badges()),
         controller=app.controller,
-        bg_color=C["surface"],
-        text_color=C["text_secondary"],
+        bg_color=palette["surface"],
+        text_color=palette["text_secondary"],
     )
 
     # All SidebarItem instances grouped by section, keyed by route
     # so the search filter can address them.
     items_by_route: dict[str, SidebarItem] = {}
 
-    def _make_item(route: str, icon: Any, label: str, badge) -> SidebarItem:
+    def _make_item(route: str, icon: Any, label: str, badge, colors: dict) -> SidebarItem:
         si = SidebarItem(
             route=route,
             icon=icon,
             label=label,
-            colors=C,
+            colors=colors,
             is_active=(route == app._current_route),
             badge=badge,
             on_click=lambda r=route: asyncio.create_task(app._navigate_to(r)),
@@ -323,14 +365,14 @@ def build_sidebar_desktop(
             if rk not in nav_index:
                 continue
             entry = nav_index[rk]
-            items.append(_make_item(*entry))
+            items.append(_make_item(*entry, colors=palette))
         if not items:
             continue
 
         sec = SidebarSection(
             title=t(section_key),
             items=items,
-            colors=C,
+            colors=palette,
             collapsed=sidebar_state["collapsed"].get(section_key, False),
             on_toggle=lambda collapsed, sk=section_key: sidebar_state["collapsed"].__setitem__(
                 sk, collapsed
@@ -354,11 +396,12 @@ def build_sidebar_desktop(
         for entry in nav_data:
             route, _icon, label, _badge = entry
             if q in label.lower():
-                asyncio.create_task(app._navigate_to(route))
+                task = asyncio.create_task(app._navigate_to(route))
+                task.add_done_callback(lambda t: None)
                 return
 
     search = SidebarSearch(
-        colors=C,
+        colors=palette,
         placeholder=f"{t('sidebar.search.placeholder')}  (Ctrl+K)",
         on_filter=_apply_filter,
         on_submit=_jump_to_first_match,
@@ -371,7 +414,7 @@ def build_sidebar_desktop(
     user_card = SidebarUserCard(
         username=app.current_user or "system",
         role=app.controller.current_user_role or "-",
-        colors=C,
+        colors=palette,
         on_settings=lambda: asyncio.create_task(app._navigate_to("settings")),
         on_logout=lambda: asyncio.create_task(app._logout()),
     )
@@ -392,7 +435,7 @@ def build_sidebar_desktop(
                                 width=32,
                                 height=32,
                                 border_radius=8,
-                                bgcolor=C["primary"],
+                                bgcolor=palette["primary"],
                                 alignment=ft.alignment.Alignment.CENTER,
                             ),
                             ft.Column(
@@ -401,12 +444,12 @@ def build_sidebar_desktop(
                                         "Inventario",
                                         size=14,
                                         weight=ft.FontWeight.BOLD,
-                                        color=C["text_primary"],
+                                        color=palette["text_primary"],
                                     ),
                                     ft.Text(
                                         "Pro",
                                         size=10,
-                                        color=C["text_muted"],
+                                        color=palette["text_muted"],
                                     ),
                                 ],
                                 spacing=0,
@@ -433,11 +476,11 @@ def build_sidebar_desktop(
             spacing=0,
             expand=True,
         ),
-        width=240,
+        width=width,
         padding=0,
-        bgcolor=C["sidebar_bg"],
+        bgcolor=palette["sidebar_bg"],
         border=ft.border.Border(
-            right=ft.BorderSide(1, C["divider"]),
+            right=ft.BorderSide(1, palette["divider"]),
         ),
     )
 
@@ -447,12 +490,12 @@ def build_sidebar_mobile(
     nav_data: list,
     mobile_items: list,
     more_items: list,
-    C: dict,
+    palette: dict,
     nav_index: dict,
 ) -> ft.NavigationBar:
     """Build the mobile NavigationBar with destinations and 'Más' overflow sheet."""
 
-    divider_color = C["divider"]
+    divider_color = palette["divider"]
 
     async def _open_more_sheet(_e):
         rows = []
@@ -475,7 +518,7 @@ def build_sidebar_mobile(
                                 color="white",
                                 weight=ft.FontWeight.BOLD,
                             ),
-                            bgcolor=C["accent"],
+                            bgcolor=palette["accent"],
                             padding=ft.Padding(left=6, right=6, top=2, bottom=2),
                             border_radius=10,
                         )
@@ -517,6 +560,6 @@ def build_sidebar_mobile(
             if (e.control.selected_index or 0) < len(mobile_items)
             else asyncio.create_task(_open_more_sheet(None))
         ),
-        bgcolor=C["surface"],
+        bgcolor=palette["surface"],
         border=ft.border.Border(top=ft.BorderSide(1, divider_color)),
     )

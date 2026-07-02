@@ -1,7 +1,7 @@
-"""
-Phase 1 UI views.
+"""Inventory operations views, refactored for clarity.
+Advanced inventory UI views.
 
-Each `show_phase1_<feature>` function renders one feature's screen and binds
+Each `show_<feature>` function renders one feature's screen and binds
 to the corresponding controller methods. They are designed as drop-in
 companions to AppView: each expects `view.page`, `view.controller`,
 `view.main_view` and the same color/header helpers from `ui.components`.
@@ -28,16 +28,10 @@ from ui.components import (
     SnackBarHelper,
 )
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
 
-
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
 
 
 def _kpi_card(title: str, value: str, icon: Any, color: str) -> ft.Container:
@@ -491,8 +485,8 @@ async def show_conteos(view) -> None:
                     producto_id=pid,
                     cantidad_contada=float(cont or 0),
                 )
-            except Exception as ex:
-                SnackBarHelper.error(page, str(ex))
+            except Exception:
+                SnackBarHelper.error(page, "Error al registrar conteo.")
                 return
             SnackBarHelper.success(page, "Conteo guardado")
             await refresh_items()
@@ -533,8 +527,8 @@ async def show_conteos(view) -> None:
                     nombre=nombre.value or "Conteo",
                     producto_ids=ids,
                 )
-            except Exception as ex:
-                SnackBarHelper.error(page, str(ex))
+            except Exception:
+                SnackBarHelper.error(page, "Error al crear sesión de conteo.")
                 return
             if ok:
                 page.pop_dialog()

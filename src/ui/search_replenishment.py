@@ -1,8 +1,8 @@
-"""
-Phase 1 views — search and replenishment: advanced search, auto-restock.
+"""Search and replenishment views, refactored for clarity.
+Advanced inventory views — search and replenishment: advanced search, auto-restock.
 
 Companion to inventory_operations.py and pricing_inventory.py.
-Re-exported by ui/phase1.py.
+Re-exported by ui/advanced_inventory.py.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from config.settings import (
     THEME_PRIMARY_COLOR,
     THEME_SUCCESS_COLOR,
 )
+from core.theme_manager import theme_manager
 from ui.components import (
     AppHeader,
     FormField,
@@ -22,18 +23,21 @@ from ui.components import (
 )
 from utils.i18n import t
 
+from ._utils import _fmt_money, get_logger
 
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
+
+
+def _c(view):
+    """Get the active color palette."""
+    return theme_manager.palette(page=view.page)
 
 
 # ============ V8: Búsqueda avanzada ============
 
 
 async def show_busqueda(view) -> None:
+    c = _c(view)
     page = view.page
     main_view = view.main_view
     controller = view.controller
@@ -78,8 +82,8 @@ async def show_busqueda(view) -> None:
             if orden.value:
                 kwargs["orden"] = orden.value
             res = await controller.buscar_productos_avanzado(**kwargs)
-        except Exception as ex:
-            SnackBarHelper.error(page, str(ex))
+        except Exception:
+            SnackBarHelper.error(page, "Error al buscar productos.")
             return
         rows = []
         for p in res:
@@ -105,13 +109,13 @@ async def show_busqueda(view) -> None:
                 ft.DataColumn(ft.Text(t("phase1.busqueda.proveedor"))),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
         results_container.content = (
             ft.Container(content=table, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("Sin resultados", color="#475569"),
+                content=ft.Text("Sin resultados", color=c["text_secondary"]),
                 padding=20,
             )
         )
@@ -158,6 +162,7 @@ async def show_busqueda(view) -> None:
 
 
 async def show_reabasto(view) -> None:
+    c = _c(view)
     page = view.page
     main_view = view.main_view
     controller = view.controller
@@ -170,9 +175,9 @@ async def show_reabasto(view) -> None:
         + [ft.dropdown.Option(key=str(p.get("id")), text=p.get("nombre", "")) for p in proveedores],
         value="ALL",
         width=300,
-        fill_color="#F8FAFC",
-        color="#0F172A",
-        text_style=ft.TextStyle(color="#0F172A", size=14),
+        fill_color=c["input_fill"],
+        color=c["text_primary"],
+        text_style=ft.TextStyle(color=c["text_primary"], size=14),
     )
 
     last_sugerencias = []
@@ -210,13 +215,13 @@ async def show_reabasto(view) -> None:
                 ft.DataColumn(ft.Text(t("phase1.reabasto.proveedor"))),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay productos bajo mínimo", color="#475569"),
+                content=ft.Text("No hay productos bajo mínimo", color=c["text_secondary"]),
                 padding=40,
             )
         )

@@ -16,6 +16,9 @@ from config.settings import (
 from services.permissions import Perm
 from ui.components import AppHeader, DialogHelper, FormField, SnackBarHelper
 from utils.i18n import t
+from utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 async def show_products_list(app):
@@ -26,8 +29,8 @@ async def show_products_list(app):
         app.current_page = 0
         update_products_table(app)
 
-    except Exception as e:
-        SnackBarHelper.error(app.page, f"Error al cargar productos: {e!s}")
+    except Exception:
+        SnackBarHelper.error(app.page, "Error al cargar productos.")
 
 
 def update_products_table(app):
@@ -244,7 +247,7 @@ def update_products_table(app):
                             ft.Container(
                                 ft.Button(
                                     content=ft.Text("+ Nuevo Producto"),
-                                    on_click=lambda e: asyncio.create_task(handle_new_product(e)),
+                                    on_click=lambda e: asyncio.create_task(handle_new_product(app, e)),
                                     style=ft.ButtonStyle(
                                         bgcolor=THEME_PRIMARY_COLOR,
                                         color="white",
@@ -279,12 +282,13 @@ def update_products_table(app):
             app.main_view.content = content
             app.page.update()
 
-    except Exception as e:
-        SnackBarHelper.error(app.page, f"Error actualizando tabla: {e!s}")
+    except Exception:
+        SnackBarHelper.error(app.page, "Error al actualizar la tabla de productos.")
 
 
 async def show_product_form(app, product: dict | None = None):
     """Display form for adding/editing products"""
+    logger.info(f"show_product_form called for product: {product.get('codigo') if product else 'new'}")
     app.current_product_edit = product
     is_edit = product is not None
 
@@ -407,8 +411,8 @@ async def show_product_form(app, product: dict | None = None):
 
         try:
             field.on_key_down = _on_key
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Error al asignar on_key_down: %s", e)
 
     if is_edit:
         codigo_field.value = product.get("codigo", "")
@@ -488,8 +492,8 @@ async def show_product_form(app, product: dict | None = None):
                 SnackBarHelper.error(app.page, result.get("error", "Error desconocido"))
                 save_btn.disabled = False
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al guardar el producto.")
             save_btn.disabled = False
 
     save_btn = ft.Button(
@@ -640,8 +644,8 @@ async def confirm_delete_product(app, product: dict):
                 await show_products_list(app)
             else:
                 SnackBarHelper.error(app.page, result.get("error", "Error al eliminar"))
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al eliminar el producto.")
 
     DialogHelper.confirmation_dialog(
         app.page,
@@ -653,4 +657,6 @@ async def confirm_delete_product(app, product: dict):
 
 async def handle_new_product(app, e=None):
     """Handle new product button click"""
+    logger.info("handle_new_product called. Attempting to show product form.")
     await show_product_form(app)
+    logger.info("show_product_form call completed.")

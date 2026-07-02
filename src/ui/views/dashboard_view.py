@@ -18,18 +18,16 @@ from config.settings import (
     THEME_WARNING_COLOR,
     THEME_WARNING_LIGHT,
 )
-from ui.charts import BarChart as TopProductosChart
+from core.theme_manager import theme_manager
+from ui._utils import _fmt_money
+from ui.charts import BarChart as TopProductsChart
 from ui.charts import LineChart as ValorInventarioChart
-from ui.charts import PieChart as DistribucionChart
+from ui.charts import PieChart as DistributionChart
 from ui.components import AppHeader, LoadingSpinner, SnackBarHelper
 from utils.i18n import t
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
-
-
-def _fmt_money(v: float) -> str:
-    return f"${v:,.2f}"
 
 
 def _kpi_card(
@@ -98,7 +96,7 @@ async def show_dashboard(app):
         app.main_view.content = loading_container
         app.page.update()
 
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
     try:
 
         async def _charts():
@@ -135,15 +133,15 @@ async def show_dashboard(app):
                 THEME_PRIMARY_COLOR,
                 THEME_PRIMARY_LIGHT,
                 ft.icons.Icons.INVENTORY_2,
-                C,
+                palette,
             ),
             _kpi_card(
                 "Unidades",
                 str(unidades_totales),
-                "#0EA5E9",
-                "#E0F2FE",
+                palette["info"],
+                palette["info_light"],
                 ft.icons.Icons.STORAGE,
-                C,
+                palette,
             ),
             _kpi_card(
                 t("phase1.dashboard.valor_venta"),
@@ -151,15 +149,15 @@ async def show_dashboard(app):
                 THEME_SUCCESS_COLOR,
                 THEME_SUCCESS_LIGHT,
                 ft.icons.Icons.ATTACH_MONEY,
-                C,
+                palette,
             ),
             _kpi_card(
                 t("phase1.dashboard.valor_costo"),
                 _fmt_money(valor_costo),
-                "#7C3AED",
-                "#EDE9FE",
+                palette["purple"],
+                palette["purple_light"],
                 ft.icons.Icons.PAID,
-                C,
+                palette,
             ),
         ]
         # Row 2: risk + sales (5 cards). Margen spans 1 col on its own.
@@ -170,7 +168,7 @@ async def show_dashboard(app):
                 THEME_WARNING_COLOR,
                 THEME_WARNING_LIGHT,
                 ft.icons.Icons.WARNING_AMBER,
-                C,
+                palette,
             ),
             _kpi_card(
                 t("phase1.dashboard.agotados"),
@@ -178,31 +176,31 @@ async def show_dashboard(app):
                 THEME_ACCENT_COLOR,
                 THEME_ACCENT_LIGHT,
                 ft.icons.Icons.ERROR,
-                C,
+                palette,
             ),
             _kpi_card(
                 t("phase1.dashboard.margen"),
                 _fmt_money(margen),
-                "#0F766E",
-                "#CCFBF1",
+                palette["teal"],
+                palette["teal_light"],
                 ft.icons.Icons.TRENDING_UP,
-                C,
+                palette,
             ),
             _kpi_card(
                 "Ventas hoy",
                 f"{ventas_hoy_count} · {_fmt_money(ventas_hoy_total)}",
-                "#16A34A",
-                "#DCFCE7",
+                palette["success"],
+                THEME_SUCCESS_LIGHT,
                 ft.icons.Icons.TODAY,
-                C,
+                palette,
             ),
             _kpi_card(
                 "Ventas mes",
                 f"{ventas_mes_count} · {_fmt_money(ventas_mes_total)}",
-                "#2563EB",
-                "#DBEAFE",
+                palette["primary"],
+                THEME_PRIMARY_LIGHT,
                 ft.icons.Icons.CALENDAR_MONTH,
-                C,
+                palette,
             ),
         ]
 
@@ -232,37 +230,37 @@ async def show_dashboard(app):
             ],
             rows=recent_table_rows,
             border=ft.border.Border(
-                ft.BorderSide(1, C["divider"]),
-                ft.BorderSide(1, C["divider"]),
-                ft.BorderSide(1, C["divider"]),
-                ft.BorderSide(1, C["divider"]),
+                ft.BorderSide(1, palette["divider"]),
+                ft.BorderSide(1, palette["divider"]),
+                ft.BorderSide(1, palette["divider"]),
+                ft.BorderSide(1, palette["divider"]),
             ),
-            heading_row_color=C["table_heading"],
-            data_row_color=C["table_row"],
-            horizontal_lines=ft.BorderSide(0.1, C["divider"]),
-            vertical_lines=ft.BorderSide(0.1, C["divider"]),
+            heading_row_color=palette["table_heading"],
+            data_row_color=palette["table_row"],
+            horizontal_lines=ft.BorderSide(0.1, palette["divider"]),
+            vertical_lines=ft.BorderSide(0.1, palette["divider"]),
         )
 
         # Build charts (flet-charts wrappers from ui/charts.py)
-        bar_chart = TopProductosChart.build(
+        bar_chart = TopProductsChart.build(
             top_productos,
             title=t("dashboard.chart.top_products"),
             value_label=t("products.quantity"),
             empty_message=t("products.empty"),
-            colors=C,
+            colors=palette,
         )
-        pie_chart = DistribucionChart.build(
+        pie_chart = DistributionChart.build(
             distribucion,
             title=t("dashboard.chart.by_category"),
             empty_message=t("products.empty"),
-            colors=C,
+            colors=palette,
         )
         line_chart = ValorInventarioChart.build(
             serie,
             title=t("dashboard.chart.value_30d"),
             value_label="$",
             empty_message=t("products.empty"),
-            colors=C,
+            colors=palette,
         )
 
         # Top-products-of-the-month table
@@ -285,9 +283,9 @@ async def show_dashboard(app):
                 ft.DataColumn(ft.Text("Ingresos")),
             ],
             rows=top_mes_rows,
-            heading_row_color=C["table_heading"],
-            horizontal_lines=ft.BorderSide(0.1, C["divider"]),
-            vertical_lines=ft.BorderSide(0.1, C["divider"]),
+            heading_row_color=palette["table_heading"],
+            horizontal_lines=ft.BorderSide(0.1, palette["divider"]),
+            vertical_lines=ft.BorderSide(0.1, palette["divider"]),
         )
 
         content = ft.Column(
@@ -348,7 +346,7 @@ async def show_dashboard(app):
                                             "Productos Recientes",
                                             size=16,
                                             weight=ft.FontWeight.BOLD,
-                                            color=C["primary"],
+                                            color=palette["primary"],
                                         ),
                                         recent_table,
                                     ],
@@ -356,7 +354,7 @@ async def show_dashboard(app):
                                 ),
                                 col={"sm": 12, "lg": 6},
                                 padding=20,
-                                bgcolor=C["surface"],
+                                bgcolor=palette["surface"],
                                 border_radius=10,
                             ),
                             ft.Container(
@@ -366,7 +364,7 @@ async def show_dashboard(app):
                                             t("phase1.dashboard.top_mes"),
                                             size=16,
                                             weight=ft.FontWeight.BOLD,
-                                            color=C["primary"],
+                                            color=palette["primary"],
                                         ),
                                         top_mes_table,
                                     ],
@@ -374,7 +372,7 @@ async def show_dashboard(app):
                                 ),
                                 col={"sm": 12, "lg": 6},
                                 padding=20,
-                                bgcolor=C["surface"],
+                                bgcolor=palette["surface"],
                                 border_radius=10,
                             ),
                         ],
@@ -395,4 +393,4 @@ async def show_dashboard(app):
 
     except Exception as e:
         logger.exception(f"dashboard: render failed: {e}")
-        SnackBarHelper.error(app.page, f"Error al cargar dashboard: {e!s}")
+        SnackBarHelper.error(app.page, "Error al cargar el dashboard.")

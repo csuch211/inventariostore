@@ -35,22 +35,31 @@ class SalesController:
         try:
             return self.db.obtener_clientes()
         except Exception as e:
-            logger.error(f"Error fetching customers: {e}")
+            logger.exception(f"Error fetching customers: {e}")
             return []
 
     async def obtener_cliente(self, cliente_id: int) -> dict | None:
         try:
             return self.db.obtener_cliente_por_id(cliente_id)
         except Exception as e:
-            logger.error(f"Error fetching customer: {e}")
+            logger.exception(f"Error fetching customer: {e}")
             return None
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
     async def crear_cliente(
         self, nombre: str, telefono: str = "", email: str = "", direccion: str = ""
     ) -> tuple[bool, dict]:
-        if not nombre or len(nombre) < 2:
-            return False, {"error": "El nombre debe tener al menos 2 caracteres"}
+        is_valid, error = Validator.validate_nombre(nombre)
+        if not is_valid:
+            return False, {"error": error}
+        if email:
+            is_valid, error = Validator.validate_email(email)
+            if not is_valid:
+                return False, {"error": error}
+        if telefono:
+            is_valid, error = Validator.validate_telefono(telefono)
+            if not is_valid:
+                return False, {"error": error}
         try:
             cliente_id = self.db.crear_cliente(
                 nombre=nombre,
@@ -62,15 +71,24 @@ class SalesController:
             logger.info(f"Customer created: {nombre}")
             return True, {"id": cliente_id, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error creating customer: {e}")
+            logger.exception(f"Error creating customer: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
     async def actualizar_cliente(
         self, cliente_id: int, nombre: str, telefono: str = "", email: str = "", direccion: str = ""
     ) -> tuple[bool, dict]:
-        if not nombre or len(nombre) < 2:
-            return False, {"error": "El nombre debe tener al menos 2 caracteres"}
+        is_valid, error = Validator.validate_nombre(nombre)
+        if not is_valid:
+            return False, {"error": error}
+        if email:
+            is_valid, error = Validator.validate_email(email)
+            if not is_valid:
+                return False, {"error": error}
+        if telefono:
+            is_valid, error = Validator.validate_telefono(telefono)
+            if not is_valid:
+                return False, {"error": error}
         try:
             self.db.actualizar_cliente(
                 cliente_id=cliente_id,
@@ -83,7 +101,7 @@ class SalesController:
             logger.info(f"Customer {cliente_id} updated")
             return True, {"id": cliente_id, "nombre": nombre}
         except Exception as e:
-            logger.error(f"Error updating customer: {e}")
+            logger.exception(f"Error updating customer: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.CLIENTES_GESTIONAR)
@@ -96,7 +114,7 @@ class SalesController:
             logger.info(f"Customer {cliente_id} deleted")
             return True, {"message": "Cliente eliminado"}
         except Exception as e:
-            logger.error(f"Error deleting customer: {e}")
+            logger.exception(f"Error deleting customer: {e}")
             return False, {"error": str(e)}
 
     # ============ Sales / POS ============
@@ -105,14 +123,14 @@ class SalesController:
         try:
             return self.db.obtener_ventas()
         except Exception as e:
-            logger.error(f"Error fetching sales: {e}")
+            logger.exception(f"Error fetching sales: {e}")
             return []
 
     async def obtener_venta(self, venta_id: int) -> dict | None:
         try:
             return self.db.obtener_venta_por_id(venta_id)
         except Exception as e:
-            logger.error(f"Error fetching sale: {e}")
+            logger.exception(f"Error fetching sale: {e}")
             return None
 
     @require_permission(Perm.VENTAS_CREAR)
@@ -153,7 +171,7 @@ class SalesController:
             logger.info(f"Sale created: #{venta_id} total=${total:.2f}")
             return True, {"id": venta_id, "total": total}
         except Exception as e:
-            logger.error(f"Error creating sale: {e}")
+            logger.exception(f"Error creating sale: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.VENTAS_CANCELAR)
@@ -166,12 +184,12 @@ class SalesController:
             logger.info(f"Sale cancelled: #{venta_id}")
             return True, {"message": "Venta cancelada y stock revertido"}
         except Exception as e:
-            logger.error(f"Error cancelling sale: {e}")
+            logger.exception(f"Error cancelling sale: {e}")
             return False, {"error": str(e)}
 
     async def obtener_estadisticas_ventas(self) -> dict:
         try:
             return self.db.obtener_ventas_estadisticas()
         except Exception as e:
-            logger.error(f"Error fetching sales stats: {e}")
+            logger.exception(f"Error fetching sales stats: {e}")
             return {"total_ventas": 0, "ingresos_totales": 0, "ingresos_hoy": 0, "ventas_hoy": 0}

@@ -27,15 +27,15 @@ TMP_DB_DIR = Path(tempfile.mkdtemp(prefix="inv_p3_test_"))
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
-import config.settings as _settings  # noqa: E402
+import config.settings as _settings
 
 _settings.DATABASE_FILE = _settings.DATABASE_PATH / "inventario_p3test.db"
 if _settings.DATABASE_FILE.exists():
     _settings.DATABASE_FILE.unlink()
 
-from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
-from utils.i18n import get_locale, set_locale  # noqa: E402
+from core.controller import InventarioController
+from services.permissions import ALL_PERMISSION_KEYS
+from utils.i18n import get_locale, set_locale
 
 PASS = "✔"
 FAIL = "✘"
@@ -299,7 +299,7 @@ async def run():
         def bad_sender(_cfg, a, c):
             return {"sent": False, "reason": "smtp down"}
 
-        from services import phase3_db as p3
+        from services import extended_features_db as p3
 
         # Manually invoke with the bad sender (controller signature doesn't
         # accept a sender override; we call the underlying function).

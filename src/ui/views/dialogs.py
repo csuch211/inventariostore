@@ -10,12 +10,16 @@ from config.settings import (
     THEME_PRIMARY_COLOR,
     THEME_SURFACE_COLOR,
 )
+from core.theme_manager import theme_manager
 from ui.components import (
     AppHeader,
     FormField,
     SnackBarHelper,
 )
 from utils.i18n import t
+from utils.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 async def show_stock_management(app):
@@ -109,11 +113,11 @@ async def show_stock_management(app):
     }
 
     def _find_submit_btn(label: str):
-        from ui.app_view import AppView
+        from ui._utils import find_submit_btn
 
-        return AppView._find_submit_btn_static(
+        return find_submit_btn(
             app.main_view, label
-        ) or AppView._find_submit_btn_static(app.page, label)
+        ) or find_submit_btn(app.page, label)
 
     def _advance_stock(name):
         if name == "razon":
@@ -184,8 +188,9 @@ async def show_stock_management(app):
                 history_table.rows = list(history_rows)
                 app.page.update()
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
+        except Exception as exc:
+            logger.exception("Error al cargar historial de stock: %s", exc)
+            SnackBarHelper.error(app.page, "Error al cargar historial de stock.")
 
     content = ft.Container(
         content=ft.Column(
@@ -261,9 +266,10 @@ async def show_export_options(app):
                 SnackBarHelper.error(app.page, f"Error: {path}")
                 export_status.value = f"✗ Error: {path}"
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
-            export_status.value = f"✗ Error: {ex!s}"
+        except Exception as exc:
+            logger.exception("Error al exportar a CSV: %s", exc)
+            SnackBarHelper.error(app.page, "Error al exportar a CSV.")
+            export_status.value = "✗ Error al exportar."
         finally:
             export_btn_csv.disabled = False
             app.page.update()
@@ -283,9 +289,10 @@ async def show_export_options(app):
                 SnackBarHelper.error(app.page, f"Error: {path}")
                 export_status.value = f"✗ Error: {path}"
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
-            export_status.value = f"✗ Error: {ex!s}"
+        except Exception as exc:
+            logger.exception("Error al exportar a JSON: %s", exc)
+            SnackBarHelper.error(app.page, "Error al exportar a JSON.")
+            export_status.value = "✗ Error al exportar."
         finally:
             export_btn_json.disabled = False
             app.page.update()
@@ -305,9 +312,10 @@ async def show_export_options(app):
                 SnackBarHelper.error(app.page, f"Error: {path}")
                 export_status.value = f"✗ Error: {path}"
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
-            export_status.value = f"✗ Error: {ex!s}"
+        except Exception as exc:
+            logger.exception("Error al generar el reporte: %s", exc)
+            SnackBarHelper.error(app.page, "Error al generar el reporte.")
+            export_status.value = "✗ Error al generar reporte."
         finally:
             export_btn_report.disabled = False
             app.page.update()
@@ -327,9 +335,10 @@ async def show_export_options(app):
                 SnackBarHelper.error(app.page, f"Error: {path}")
                 export_status.value = f"✗ Error: {path}"
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
-            export_status.value = f"✗ Error: {ex!s}"
+        except Exception as exc:
+            logger.exception("Error al exportar a PDF: %s", exc)
+            SnackBarHelper.error(app.page, "Error al exportar a PDF.")
+            export_status.value = "✗ Error al exportar."
         finally:
             export_btn_pdf.disabled = False
             app.page.update()
@@ -349,9 +358,10 @@ async def show_export_options(app):
                 SnackBarHelper.error(app.page, f"Error: {path}")
                 export_status.value = f"✗ Error: {path}"
 
-        except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error: {ex!s}")
-            export_status.value = f"✗ Error: {ex!s}"
+        except Exception as exc:
+            logger.exception("Error al exportar a Excel: %s", exc)
+            SnackBarHelper.error(app.page, "Error al exportar a Excel.")
+            export_status.value = "✗ Error al exportar."
         finally:
             export_btn_xlsx.disabled = False
             app.page.update()
@@ -416,7 +426,7 @@ async def show_export_options(app):
 
     async def _show_import_dialog():
         """Show a dialog asking for the file path; detect format by extension."""
-        C = app._get_colors()
+        C = theme_manager.palette(page=app.page)
         path_field = FormField.create_text_field(
             label=t("export.import_path_label"),
             hint=t("export.import_path_hint"),
@@ -793,7 +803,7 @@ async def show_order_form(app):
     async def save(e):
         try:
             qty = int(cantidad.value)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             SnackBarHelper.error(app.page, t("common.validation_error"))
             return
         if not proveedor_dd.value or not producto_dd.value or qty <= 0:

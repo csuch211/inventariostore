@@ -8,7 +8,8 @@ the sender knowing about the receivers.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from utils.logger import setup_logger
 

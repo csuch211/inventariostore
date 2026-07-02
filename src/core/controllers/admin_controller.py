@@ -4,12 +4,14 @@ Admin controller for users, roles, permissions, theme, backup, and push operatio
 
 from pathlib import Path
 
+from services import extended_features_db
 from services.auth import AuthService
 from services.backup import BackupService
 from services.database import DatabaseManager
 from services.export import ExportService
 from services.permissions import Perm, require_permission
 from utils.logger import setup_logger
+from utils.validators import Validator
 
 logger = setup_logger(__name__)
 
@@ -45,7 +47,7 @@ class AdminController:
                 u["permisos_extra"] = self.db.obtener_permisos_extra(u["id"])
             return usuarios
         except Exception as e:
-            logger.error(f"Error fetching users with roles: {e}")
+            logger.exception(f"Error fetching users with roles: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -58,6 +60,11 @@ class AdminController:
     ) -> tuple[bool, dict]:
         """Create a user, hash the password, and assign a role."""
         try:
+            # Validate password strength
+            ok, err = Validator.validate_password(password)
+            if not ok:
+                return False, {"error": err}
+
             password_hash = AuthService.hash_password(password)
             user_id = self.db.crear_usuario(
                 username=username,
@@ -77,7 +84,7 @@ class AdminController:
             logger.info(f"User created: {username} as {rol_nombre}")
             return True, {"id": user_id, "username": username}
         except Exception as e:
-            logger.error(f"Error creating user: {e}")
+            logger.exception(f"Error creating user: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -91,7 +98,7 @@ class AdminController:
             )
             return True, {"rol": rol_nombre}
         except Exception as e:
-            logger.error(f"Error assigning role: {e}")
+            logger.exception(f"Error assigning role: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -109,21 +116,21 @@ class AdminController:
                 )
             return True, {"permiso": permiso_clave, "agregado": agregar}
         except Exception as e:
-            logger.error(f"Error toggling extra permission: {e}")
+            logger.exception(f"Error toggling extra permission: {e}")
             return False, {"error": str(e)}
 
     async def obtener_permisos_catalogo(self) -> list[dict]:
         try:
             return self.db.obtener_permisos_catalogo()
         except Exception as e:
-            logger.error(f"Error fetching permission catalog: {e}")
+            logger.exception(f"Error fetching permission catalog: {e}")
             return []
 
     async def obtener_roles(self) -> list[dict]:
         try:
             return self.db.obtener_roles()
         except Exception as e:
-            logger.error(f"Error fetching roles: {e}")
+            logger.exception(f"Error fetching roles: {e}")
             return []
 
     # ============ Theme management ============
@@ -164,7 +171,7 @@ class AdminController:
                 self.db.guardar_config("theme_mode", modo)
             return True
         except Exception as e:
-            logger.error(f"Error changing theme: {e}")
+            logger.exception(f"Error changing theme: {e}")
             return False
 
     # ============ Backup management ============
@@ -185,7 +192,7 @@ class AdminController:
             )
             return result
         except Exception as e:
-            logger.error(f"Error creating backup: {e}")
+            logger.exception(f"Error creating backup: {e}")
             return {"error": str(e)}
 
     @require_permission(Perm.BACKUPS_CREAR)
@@ -205,7 +212,7 @@ class AdminController:
                     b["file_exists"] = False
             return db_backups
         except Exception as e:
-            logger.error(f"Error listing backups: {e}")
+            logger.exception(f"Error listing backups: {e}")
             return []
 
     @require_permission(Perm.BACKUPS_RESTAURAR)
@@ -214,7 +221,7 @@ class AdminController:
         try:
             return BackupService.restore_backup(backup_path)
         except Exception as e:
-            logger.error(f"Error restoring backup: {e}")
+            logger.exception(f"Error restoring backup: {e}")
             return {"error": str(e)}
 
     @require_permission(Perm.BACKUPS_CREAR)
@@ -225,7 +232,7 @@ class AdminController:
             self.db.eliminar_backup(backup_id)
             return True
         except Exception as e:
-            logger.error(f"Error deleting backup: {e}")
+            logger.exception(f"Error deleting backup: {e}")
             return False
 
     # ============ Fase 3: Push / Email queue ============
@@ -238,10 +245,8 @@ class AdminController:
         asunto: str,
         cuerpo: str,
     ) -> tuple[bool, dict]:
-        from services import phase3_db
-
         try:
-            jid = phase3_db.encolar_job(
+            jid = extended_features_db.encolar_job(
                 self.db,
                 tipo=tipo,
                 destinatario=destinatario,
@@ -250,7 +255,7 @@ class AdminController:
             )
             return True, {"id": jid}
         except Exception as e:
-            logger.error(f"Error enqueuing push: {e}")
+            logger.exception(f"Error enqueuing push: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.PUSH_ENVIAR)
@@ -259,20 +264,16 @@ class AdminController:
         estado: str | None = None,
         limit: int = 100,
     ) -> list[dict]:
-        from services import phase3_db
-
         try:
-            return phase3_db.obtener_jobs(self.db, estado=estado, limit=limit)
+            return extended_features_db.obtener_jobs(self.db, estado=estado, limit=limit)
         except Exception as e:
-            logger.error(f"Error fetching jobs: {e}")
+            logger.exception(f"Error fetching jobs: {e}")
             return []
 
     @require_permission(Perm.PUSH_ENVIAR)
     async def despachar_jobs_push(self, limit: int = 25) -> dict:
-        from services import phase3_db
-
         try:
-            return phase3_db.despachar_jobs_pendientes(self.db, limit=limit)
+            return extended_features_db.despachar_jobs_pendientes(self.db, limit=limit)
         except Exception as e:
-            logger.error(f"Error dispatching jobs: {e}")
+            logger.exception(f"Error dispatching jobs: {e}")
             return {"procesados": 0, "enviados": 0, "fallidos": 0, "error": str(e)}

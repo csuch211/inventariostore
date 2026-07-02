@@ -36,7 +36,7 @@ class HRController:
             result = self.db.employee_repo.crear_empleado(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating employee: {e}")
+            logger.exception(f"Error creating employee: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -45,7 +45,7 @@ class HRController:
         try:
             return self.db.employee_repo.obtener_empleado(empleado_id)
         except Exception as e:
-            logger.error(f"Error fetching employee: {e}")
+            logger.exception(f"Error fetching employee: {e}")
             return None
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -56,7 +56,7 @@ class HRController:
         try:
             return self.db.employee_repo.obtener_empleados(departamento=departamento, estado=estado)
         except Exception as e:
-            logger.error(f"Error fetching employees: {e}")
+            logger.exception(f"Error fetching employees: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -67,7 +67,7 @@ class HRController:
             self.db.employee_repo.actualizar_empleado(empleado_id, **kwargs)
             return True, {"message": "Employee updated"}
         except Exception as e:
-            logger.error(f"Error updating employee: {e}")
+            logger.exception(f"Error updating employee: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -77,7 +77,7 @@ class HRController:
             self.db.employee_repo.eliminar_empleado(empleado_id, usuario=self.current_user or "system")
             return True, {"message": "Employee deactivated"}
         except Exception as e:
-            logger.error(f"Error deactivating employee: {e}")
+            logger.exception(f"Error deactivating employee: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -86,7 +86,7 @@ class HRController:
         try:
             return self.db.employee_repo.obtener_departamentos()
         except Exception as e:
-            logger.error(f"Error fetching departments: {e}")
+            logger.exception(f"Error fetching departments: {e}")
             return []
 
     # ============ Nómina ============
@@ -99,7 +99,7 @@ class HRController:
             result = self.db.hr_repo.crear_nomina(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating payroll: {e}")
+            logger.exception(f"Error creating payroll: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -110,7 +110,7 @@ class HRController:
         try:
             return self.db.hr_repo.obtener_nomina(empleado_id=empleado_id, periodo=periodo)
         except Exception as e:
-            logger.error(f"Error fetching payroll: {e}")
+            logger.exception(f"Error fetching payroll: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -120,7 +120,7 @@ class HRController:
             self.db.hr_repo.aprobar_nomina(nomina_id, usuario=self.current_user or "system")
             return True, {"message": "Payroll approved"}
         except Exception as e:
-            logger.error(f"Error approving payroll: {e}")
+            logger.exception(f"Error approving payroll: {e}")
             return False, {"error": str(e)}
 
     # ============ Asistencia ============
@@ -132,7 +132,7 @@ class HRController:
             result = self.db.hr_repo.registrar_asistencia(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error registering attendance: {e}")
+            logger.exception(f"Error registering attendance: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -146,7 +146,7 @@ class HRController:
                 empleado_id=empleado_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin
             )
         except Exception as e:
-            logger.error(f"Error fetching attendance: {e}")
+            logger.exception(f"Error fetching attendance: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -157,7 +157,7 @@ class HRController:
         try:
             return self.db.hr_repo.calcular_horas_empleado(empleado_id, fecha_inicio, fecha_fin)
         except Exception as e:
-            logger.error(f"Error calculating hours: {e}")
+            logger.exception(f"Error calculating hours: {e}")
             return {"total_horas": 0, "total_extras": 0, "dias_trabajados": 0}
 
     # ============ Vacaciones ============
@@ -169,7 +169,7 @@ class HRController:
             result = self.db.hr_repo.solicitar_vacaciones(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error requesting vacation: {e}")
+            logger.exception(f"Error requesting vacation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -180,7 +180,7 @@ class HRController:
         try:
             return self.db.hr_repo.obtener_vacaciones(empleado_id=empleado_id, estado=estado)
         except Exception as e:
-            logger.error(f"Error fetching vacations: {e}")
+            logger.exception(f"Error fetching vacations: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -193,7 +193,7 @@ class HRController:
             )
             return True, {"message": "Vacation approved"}
         except Exception as e:
-            logger.error(f"Error approving vacation: {e}")
+            logger.exception(f"Error approving vacation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_GESTIONAR)
@@ -203,7 +203,7 @@ class HRController:
             self.db.hr_repo.rechazar_vacaciones(vacacion_id, usuario=self.current_user or "system")
             return True, {"message": "Vacation rejected"}
         except Exception as e:
-            logger.error(f"Error rejecting vacation: {e}")
+            logger.exception(f"Error rejecting vacation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -212,7 +212,7 @@ class HRController:
         try:
             return self.db.hr_repo.dias_vacaciones_disponibles(empleado_id)
         except Exception as e:
-            logger.error(f"Error calculating vacation days: {e}")
+            logger.exception(f"Error calculating vacation days: {e}")
             return 0
 
     # ============ Evaluaciones ============
@@ -225,7 +225,7 @@ class HRController:
             result = self.db.hr_repo.crear_evaluacion(**kwargs)
             return True, result
         except Exception as e:
-            logger.error(f"Error creating evaluation: {e}")
+            logger.exception(f"Error creating evaluation: {e}")
             return False, {"error": str(e)}
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -234,7 +234,7 @@ class HRController:
         try:
             return self.db.hr_repo.obtener_evaluaciones(empleado_id=empleado_id)
         except Exception as e:
-            logger.error(f"Error fetching evaluations: {e}")
+            logger.exception(f"Error fetching evaluations: {e}")
             return []
 
     @require_permission(Perm.USUARIOS_LEER)
@@ -243,5 +243,5 @@ class HRController:
         try:
             return self.db.hr_repo.promedio_evaluaciones(empleado_id)
         except Exception as e:
-            logger.error(f"Error calculating average score: {e}")
+            logger.exception(f"Error calculating average score: {e}")
             return 0

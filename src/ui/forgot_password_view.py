@@ -10,6 +10,7 @@ import asyncio
 import flet as ft
 
 from config.settings import THEME_PRIMARY_COLOR
+from core.theme_manager import theme_manager
 from ui.components import SnackBarHelper
 from utils.logger import setup_logger
 
@@ -18,24 +19,24 @@ logger = setup_logger(__name__)
 
 async def show_forgot_password(app):
     """Display forgot password form."""
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
 
     username_field = ft.TextField(
         label="Usuario",
         width=340,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=        palette["input_border"],
+        focused_border_color=        palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=        palette["input_fill"],
+        color=        palette["text_on_input"],
+        cursor_color=        palette["cursor"],
+        label_style=ft.TextStyle(color=        palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=        palette["text_muted"]),
+        text_style=ft.TextStyle(color=        palette["text_on_input"], size=14),
         hint_text="Tu usuario",
     )
 
-    error_text = ft.Text("", color=C["accent"], size=12)
+    error_text = ft.Text("", color=        palette["accent"], size=12)
     success_text = ft.Text("", color="green", size=12)
 
     async def handle_request(e):
@@ -58,7 +59,7 @@ async def show_forgot_password(app):
             from api.rest import ForgotPasswordRequest, forgot_password
 
             req = ForgotPasswordRequest(username=username)
-            result = await forgot_password(req)
+            await forgot_password(req)
 
             # Always show success to prevent user enumeration
             success_text.value = "✓ Si el usuario existe, se envió un email con instrucciones."
@@ -68,18 +69,20 @@ async def show_forgot_password(app):
 
         except Exception as ex:
             error_text.value = f"Error: {ex}"
-            SnackBarHelper.error(app.page, f"Error: {ex}")
+            SnackBarHelper.error(app.page, "Error al procesar la solicitud.")
         finally:
             request_btn.disabled = False
             app.page.update()
 
     def go_to_reset(e):
         """Navigate to reset password screen."""
-        asyncio.create_task(show_reset_password(app, username_field.value or ""))
+        task = asyncio.create_task(show_reset_password(app, username_field.value or ""))
+        task.add_done_callback(lambda t: None)
 
     def go_back_to_login(e):
         """Navigate back to login screen."""
-        asyncio.create_task(app._show_login_screen())
+        task = asyncio.create_task(app._show_login_screen())
+        task.add_done_callback(lambda t: None)
 
     request_btn = ft.Button(
         content=ft.Text("Enviar Instrucciones"),
@@ -95,7 +98,7 @@ async def show_forgot_password(app):
     reset_btn = ft.TextButton(
         content=ft.Text(
             "¿Ya tienes el token? Restablecer contraseña",
-            color=C["primary"],
+            color=        palette["primary"],
             size=12,
         ),
         on_click=go_to_reset,
@@ -125,7 +128,7 @@ async def show_forgot_password(app):
                             ft.Text(
                                 "Ingresa tu usuario para recibir instrucciones",
                                 size=12,
-                                color=C["text_muted"],
+                                color=        palette["text_muted"],
                                 text_align=ft.TextAlign.CENTER,
                             ),
                         ],
@@ -134,7 +137,7 @@ async def show_forgot_password(app):
                     ),
                     padding=ft.padding.Padding(left=0, right=0, top=0, bottom=10),
                 ),
-                ft.Divider(height=1, color=C["divider"]),
+                ft.Divider(height=1, color=        palette["divider"]),
                 ft.Container(height=5),
                 username_field,
                 error_text,
@@ -147,10 +150,10 @@ async def show_forgot_password(app):
             spacing=10,
             width=card_width,
         ),
-        bgcolor=C["surface"],
+        bgcolor=        palette["surface"],
         padding=30,
         border_radius=16,
-        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=C["shadow"]),
+        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=        palette["shadow"]),
     )
 
     container = ft.Container(
@@ -163,8 +166,8 @@ async def show_forgot_password(app):
             expand=True,
         ),
         expand=True,
-        bgcolor=C["background"],
-        alignment=ft.alignment.center,
+        bgcolor=        palette["background"],
+        alignment=ft.alignment.Alignment.CENTER,
     )
 
     if app.main_view:
@@ -177,20 +180,20 @@ async def show_forgot_password(app):
 
 async def show_reset_password(app, username: str = ""):
     """Display reset password form with token and new password."""
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
 
     token_field = ft.TextField(
         label="Token de recuperación",
         width=340,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=        palette["input_border"],
+        focused_border_color=        palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=        palette["input_fill"],
+        color=        palette["text_on_input"],
+        cursor_color=        palette["cursor"],
+        label_style=ft.TextStyle(color=        palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=        palette["text_muted"]),
+        text_style=ft.TextStyle(color=        palette["text_on_input"], size=14),
         hint_text="Pega el token de tu email",
     )
 
@@ -199,15 +202,15 @@ async def show_reset_password(app, username: str = ""):
         width=340,
         password=True,
         can_reveal_password=True,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=        palette["input_border"],
+        focused_border_color=        palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=        palette["input_fill"],
+        color=        palette["text_on_input"],
+        cursor_color=        palette["cursor"],
+        label_style=ft.TextStyle(color=        palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=        palette["text_muted"]),
+        text_style=ft.TextStyle(color=        palette["text_on_input"], size=14),
         hint_text="Mínimo 8 caracteres",
     )
 
@@ -216,19 +219,19 @@ async def show_reset_password(app, username: str = ""):
         width=340,
         password=True,
         can_reveal_password=True,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=        palette["input_border"],
+        focused_border_color=        palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
-        color=C["text_on_input"],
-        cursor_color=C["cursor"],
-        label_style=ft.TextStyle(color=C["text_secondary"]),
-        hint_style=ft.TextStyle(color=C["text_muted"]),
-        text_style=ft.TextStyle(color=C["text_on_input"], size=14),
+        fill_color=        palette["input_fill"],
+        color=        palette["text_on_input"],
+        cursor_color=        palette["cursor"],
+        label_style=ft.TextStyle(color=        palette["text_secondary"]),
+        hint_style=ft.TextStyle(color=        palette["text_muted"]),
+        text_style=ft.TextStyle(color=        palette["text_on_input"], size=14),
         hint_text="Repite tu contraseña",
     )
 
-    error_text = ft.Text("", color=C["accent"], size=12)
+    error_text = ft.Text("", color=        palette["accent"], size=12)
     success_text = ft.Text("", color="green", size=12)
 
     async def handle_reset(e):
@@ -275,7 +278,7 @@ async def show_reset_password(app, username: str = ""):
             from api.rest import ResetPasswordRequest, reset_password
 
             req = ResetPasswordRequest(token=token, new_password=password)
-            result = await reset_password(req)
+            await reset_password(req)
 
             success_text.value = "✓ Contraseña restablecida exitosamente"
             SnackBarHelper.success(app.page, "Contraseña actualizada")
@@ -288,14 +291,15 @@ async def show_reset_password(app, username: str = ""):
 
         except Exception as ex:
             error_text.value = f"Error: {ex}"
-            SnackBarHelper.error(app.page, f"Error: {ex}")
+            SnackBarHelper.error(app.page, "Error al restablecer la contraseña.")
         finally:
             reset_btn.disabled = False
             app.page.update()
 
     def go_back_to_login(e):
         """Navigate back to login screen."""
-        asyncio.create_task(app._show_login_screen())
+        task = asyncio.create_task(app._show_login_screen())
+        task.add_done_callback(lambda t: None)
 
     reset_btn = ft.Button(
         content=ft.Text("Restablecer Contraseña"),
@@ -332,7 +336,7 @@ async def show_reset_password(app, username: str = ""):
                             ft.Text(
                                 "Ingresa el token y tu nueva contraseña",
                                 size=12,
-                                color=C["text_muted"],
+                                color=        palette["text_muted"],
                                 text_align=ft.TextAlign.CENTER,
                             ),
                         ],
@@ -341,7 +345,7 @@ async def show_reset_password(app, username: str = ""):
                     ),
                     padding=ft.padding.Padding(left=0, right=0, top=0, bottom=10),
                 ),
-                ft.Divider(height=1, color=C["divider"]),
+                ft.Divider(height=1, color=        palette["divider"]),
                 ft.Container(height=5),
                 token_field,
                 password_field,
@@ -355,10 +359,10 @@ async def show_reset_password(app, username: str = ""):
             spacing=10,
             width=card_width,
         ),
-        bgcolor=C["surface"],
+        bgcolor=        palette["surface"],
         padding=30,
         border_radius=16,
-        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=C["shadow"]),
+        shadow=ft.BoxShadow(spread_radius=1, blur_radius=8, color=        palette["shadow"]),
     )
 
     container = ft.Container(
@@ -371,8 +375,8 @@ async def show_reset_password(app, username: str = ""):
             expand=True,
         ),
         expand=True,
-        bgcolor=C["background"],
-        alignment=ft.alignment.center,
+        bgcolor=        palette["background"],
+        alignment=ft.alignment.Alignment.CENTER,
     )
 
     if app.main_view:

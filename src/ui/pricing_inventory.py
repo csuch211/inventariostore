@@ -1,7 +1,7 @@
-"""
-Phase 1 views — pricing and inventory: lots, prices, taxes, cash.
+"""Pricing and inventory views, refactored for clarity.
+Advanced inventory views — pricing and inventory: lots, prices, taxes, cash.
 
-Companion to inventory_operations.py. Re-exported by ui/phase1.py.
+Companion to inventory_operations.py. Re-exported by ui/advanced_inventory.py.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from config.settings import (
     THEME_SUCCESS_COLOR,
     THEME_WARNING_COLOR,
 )
+from core.theme_manager import theme_manager
 from ui.components import (
     AppHeader,
     FormField,
@@ -23,12 +24,14 @@ from ui.components import (
 )
 from utils.i18n import t
 
+from ._utils import _fmt_money, get_logger
 
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+logger = get_logger(__name__)
+
+
+def _c(app):
+    """Get the active color palette."""
+    return theme_manager.palette(page=app.page)
 
 
 # ============ V4: Lotes ============
@@ -38,6 +41,7 @@ async def show_lotes(view) -> None:
     page = view.page
     main_view = view.main_view
     controller = view.controller
+    c = _c(view)
 
     ventana = ft.Dropdown(
         label=t("phase1.lotes.vencen_pronto"),
@@ -49,9 +53,9 @@ async def show_lotes(view) -> None:
         ],
         value="0",
         width=180,
-        fill_color="#F8FAFC",
-        color="#0F172A",
-        text_style=ft.TextStyle(color="#0F172A", size=14),
+        fill_color=c["input_fill"],
+        color=c["text_primary"],
+        text_style=ft.TextStyle(color=c["text_primary"], size=14),
     )
 
     async def refresh():
@@ -100,13 +104,13 @@ async def show_lotes(view) -> None:
                 ft.DataColumn(ft.Text("Estado")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text(t("phase1.lotes.empty"), color="#475569"),
+                content=ft.Text(t("phase1.lotes.empty"), color=c["text_secondary"]),
                 padding=40,
             )
         )
@@ -203,6 +207,7 @@ async def show_precios(view) -> None:
     page = view.page
     main_view = view.main_view
     controller = view.controller
+    c = _c(view)
 
     async def refresh():
         listas = await controller.obtener_listas_precios()
@@ -217,7 +222,7 @@ async def show_precios(view) -> None:
                         ft.Text(
                             lst.get("descripcion", "") or "",
                             size=12,
-                            color="#475569",
+                            color=c["text_secondary"],
                         ),
                         ft.Container(height=8),
                         ft.Button(
@@ -231,12 +236,12 @@ async def show_precios(view) -> None:
                 ),
                 padding=16,
                 border_radius=10,
-                bgcolor="#FFFFFF",
+                bgcolor=c["surface"],
                 border=ft.border.Border(
-                    ft.BorderSide(1, "#E2E8F0"),
-                    ft.BorderSide(1, "#E2E8F0"),
-                    ft.BorderSide(1, "#E2E8F0"),
-                    ft.BorderSide(1, "#E2E8F0"),
+                    ft.BorderSide(1, c["divider"]),
+                    ft.BorderSide(1, c["divider"]),
+                    ft.BorderSide(1, c["divider"]),
+                    ft.BorderSide(1, c["divider"]),
                 ),
                 width=240,
             )
@@ -353,11 +358,12 @@ async def show_impuestos(view) -> None:
     page = view.page
     main_view = view.main_view
     controller = view.controller
+    c = _c(view)
 
     base = ft.TextField(label="Precio base", width=200, value="1000")
     pct = ft.TextField(label=t("phase1.impuestos.porcentaje"), width=200, value="19")
     out_total = ft.Text("", size=20, weight=ft.FontWeight.BOLD, color=THEME_PRIMARY_COLOR)
-    out_break = ft.Text("", size=12, color="#475569")
+    out_break = ft.Text("", size=12, color=c["text_secondary"])
 
     async def refresh():
         items = await controller.obtener_impuestos()
@@ -381,7 +387,7 @@ async def show_impuestos(view) -> None:
                 ft.DataColumn(ft.Text("Tipo")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
         calc_card = ft.Container(
             content=ft.Column(
@@ -396,12 +402,12 @@ async def show_impuestos(view) -> None:
             ),
             padding=16,
             border_radius=10,
-            bgcolor="#F8FAFC",
+            bgcolor=c["input_fill"],
             border=ft.border.Border(
-                ft.BorderSide(1, "#E2E8F0"),
-                ft.BorderSide(1, "#E2E8F0"),
-                ft.BorderSide(1, "#E2E8F0"),
-                ft.BorderSide(1, "#E2E8F0"),
+                ft.BorderSide(1, c["divider"]),
+                ft.BorderSide(1, c["divider"]),
+                ft.BorderSide(1, c["divider"]),
+                ft.BorderSide(1, c["divider"]),
             ),
             width=460,
         )
@@ -505,6 +511,7 @@ async def show_caja(view) -> None:
     page = view.page
     main_view = view.main_view
     controller = view.controller
+    c = _c(view)
 
     usuario = controller.current_user or "system"
 
@@ -545,7 +552,7 @@ async def show_caja(view) -> None:
                     ft.DataColumn(ft.Text("Fecha")),
                 ],
                 rows=mov_rows,
-                heading_row_color="#DBEAFE",
+                heading_row_color=c["primary_light"],
             )
             ventas_rows = []
             for v in contenido.get("ventas", []):
@@ -567,7 +574,7 @@ async def show_caja(view) -> None:
                     ft.DataColumn(ft.Text("Fecha")),
                 ],
                 rows=ventas_rows,
-                heading_row_color="#DBEAFE",
+                heading_row_color=c["primary_light"],
             )
             content_body = ft.Column(
                 [

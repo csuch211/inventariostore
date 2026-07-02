@@ -51,6 +51,8 @@ print("\nAll THEME_* constants are imported correctly.")
 # Runtime check: the module actually loads and _get_colors returns
 # the focus_ring key in both modes (this is what the user hit).
 sys.path.insert(0, str(_REPO / "src"))
+from typing import ClassVar
+
 import flet as ft
 
 from ui.app_view import AppView
@@ -66,9 +68,9 @@ class _StubPage:
     bgcolor = ""
     width = 1280
     height = 800
-    controls: list = []
-    overlay: list = []
-    _dialogs: list = []
+    controls: ClassVar[list] = []
+    overlay: ClassVar[list] = []
+    _dialogs: ClassVar[list] = []
 
     def clean(self):
         self.controls.clear()

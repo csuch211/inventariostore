@@ -1,4 +1,4 @@
-"""
+"""Product reports views, refactored for clarity.
 Product reports views — variantes and reportes.
 
 Full implementation with CRUD operations for product variants
@@ -11,18 +11,18 @@ import json
 import flet as ft
 
 from config.settings import THEME_ACCENT_COLOR, THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import _fmt_money, get_logger
+
+logger = get_logger(__name__)
 
 
-def _fmt_money(v) -> str:
-    try:
-        return f"${float(v):,.2f}"
-    except Exception:
-        return "$0.00"
+def _c(app):
+    """Get the active color palette."""
+    return theme_manager.palette(page=app.page)
 
 
 # ============ Variantes de Producto ============
@@ -30,13 +30,14 @@ def _fmt_money(v) -> str:
 
 async def show_variantes(app):
     """Display product variants management view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     async def refresh():
         try:
             variantes = await controller.obtener_variantes()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener variantes: %s", e)
             variantes = []
 
         rows = []
@@ -45,8 +46,8 @@ async def show_variantes(app):
             if isinstance(atributos, str):
                 try:
                     atributos = json.loads(atributos)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error("Error al parsear atributos JSON: %s", e)
             attr_str = (
                 ", ".join(f"{k}: {v2}" for k, v2 in atributos.items())
                 if isinstance(atributos, dict)
@@ -106,14 +107,14 @@ async def show_variantes(app):
                 ft.DataColumn(ft.Text("Acciones")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay variantes registradas", color="#475569"),
+                content=ft.Text("No hay variantes registradas", color=c["text_secondary"]),
                 padding=40,
             )
         )
@@ -251,16 +252,16 @@ async def show_variantes(app):
 
 async def show_reportes(app):
     """Display customizable reports view."""
-    C = app._get_colors()
+    c = _c(app)
     controller = app.controller
 
     async def refresh():
         try:
             plantillas = await controller.obtener_plantillas_reporte()
-            modulos = await controller.obtener_modulos_reporte()
-        except Exception:
+            await controller.obtener_modulos_reporte()
+        except Exception as e:
+            logger.error("Error al obtener plantillas/módulos: %s", e)
             plantillas = []
-            modulos = []
 
         rows = []
         for p in plantillas:
@@ -268,8 +269,8 @@ async def show_reportes(app):
             if isinstance(columnas, str):
                 try:
                     columnas = json.loads(columnas)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error("Error al parsear columnas JSON: %s", e)
             col_str = ", ".join(columnas) if isinstance(columnas, list) else str(columnas)
 
             rows.append(
@@ -316,14 +317,14 @@ async def show_reportes(app):
                 ft.DataColumn(ft.Text("Acciones")),
             ],
             rows=rows,
-            heading_row_color="#DBEAFE",
+            heading_row_color=c["primary_light"],
         )
 
         body = (
             ft.Container(content=table, padding=20, expand=True)
             if rows
             else ft.Container(
-                content=ft.Text("No hay plantillas guardadas", color="#475569"),
+                content=ft.Text("No hay plantillas guardadas", color=c["text_secondary"]),
                 padding=40,
             )
         )
@@ -346,7 +347,8 @@ async def show_reportes(app):
     async def open_new(e):
         try:
             modulos = await controller.obtener_modulos_reporte()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener módulos de reporte: %s", e)
             modulos = []
 
         nombre = FormField.create_text_field("Nombre del reporte")
@@ -403,8 +405,8 @@ async def show_reportes(app):
             else:
                 data = result.get("data", [])
                 SnackBarHelper.success(app.page, f"Reporte: {len(data)} registros")
-        except Exception as ex:
-            SnackBarHelper.error(app.page, str(ex))
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al ejecutar el reporte.")
 
     async def delete_template(template_id):
         ok, res = await controller.eliminar_plantilla_reporte(template_id)

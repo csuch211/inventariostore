@@ -103,7 +103,7 @@ class TestReportController:
         await ctrl.crear_producto(
             codigo="EXP-1", nombre="Export Product", cantidad="5", precio="10.0"
         )
-        success, path = await ctrl.exportar_csv()
+        success, _path = await ctrl.exportar_csv()
         assert success is True
 
     @pytest.mark.asyncio
@@ -111,7 +111,7 @@ class TestReportController:
         await ctrl.crear_producto(
             codigo="EXP-2", nombre="Export JSON Product", cantidad="3", precio="7.5"
         )
-        success, path = await ctrl.exportar_json()
+        success, _path = await ctrl.exportar_json()
         assert success is True
 
 
@@ -138,10 +138,10 @@ class TestAdminController:
         assert len(perms) >= 50
 
 
-# ============ Phase1Controller ============
+# ============ AdvancedInventoryController ============
 
 
-class TestPhase1Controller:
+class TestAdvancedInventoryController:
     @pytest.mark.asyncio
     async def test_obtener_kpis_dashboard(self, ctrl):
         kpis = await ctrl.obtener_kpis_dashboard()
@@ -153,7 +153,7 @@ class TestPhase1Controller:
             codigo="LOT-001", nombre="Lote Product", cantidad="10", precio="5.0"
         )
         assert success is True
-        success, lote = await ctrl.crear_lote(product["id"], "LOT-001-A", 10)
+        success, _lote = await ctrl.crear_lote(product["id"], "LOT-001-A", 10)
         assert success is True
 
     @pytest.mark.asyncio
@@ -163,7 +163,7 @@ class TestPhase1Controller:
 
     @pytest.mark.asyncio
     async def test_crear_lista_precio(self, ctrl):
-        success, lista = await ctrl.crear_lista_precio("Mayoreo", "Precios de mayoreo")
+        success, _lista = await ctrl.crear_lista_precio("Mayoreo", "Precios de mayoreo")
         assert success is True
 
     @pytest.mark.asyncio
@@ -172,10 +172,10 @@ class TestPhase1Controller:
         assert isinstance(impuestos, list)
 
 
-# ============ Phase3Controller ============
+# ============ ExtendedFeaturesController ============
 
 
-class TestPhase3Controller:
+class TestExtendedFeaturesController:
     @pytest.mark.asyncio
     async def test_obtener_variantes(self, ctrl):
         variantes = await ctrl.obtener_variantes()
@@ -221,5 +221,5 @@ class TestInventarioControllerFacade:
     @pytest.mark.asyncio
     async def test_sync_children_on_permissions_change(self, ctrl):
         ctrl.current_user_permissions = {Perm.DASHBOARD_VER}
-        assert Perm.DASHBOARD_VER in ctrl._phase1.current_user_permissions
+        assert Perm.DASHBOARD_VER in ctrl._advanced_inventory.current_user_permissions
         assert Perm.DASHBOARD_VER in ctrl._products.current_user_permissions

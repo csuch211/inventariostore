@@ -184,3 +184,11 @@ data/debug_*.db
 # Generated runtime files
 barcodes/
 qrcodes/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

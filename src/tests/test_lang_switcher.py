@@ -45,18 +45,18 @@ TMP_DB_DIR = Path(tempfile.mkdtemp(prefix="inv_langswitcher_test_"))
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
-import config.settings as _settings  # noqa: E402
+import config.settings as _settings
 
 _settings.DATABASE_FILE = _settings.DATABASE_PATH / "inventario_lswitch_test.db"
 if _settings.DATABASE_FILE.exists():
     _settings.DATABASE_FILE.unlink()
 
-import flet as ft  # noqa: E402
+import flet as ft
 
-from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
-from ui.components import LangSwitcher  # noqa: E402
-from utils.i18n import get_locale, set_locale  # noqa: E402
+from core.controller import InventarioController
+from services.permissions import ALL_PERMISSION_KEYS
+from ui.components import LangSwitcher
+from utils.i18n import get_locale, set_locale
 
 PASS = "✔"
 FAIL = "✘"

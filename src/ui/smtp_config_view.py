@@ -1,4 +1,4 @@
-"""
+"""SMTP Configuration view, refactored for clarity.
 SMTP Configuration view — graphical form for setting up email.
 
 Provides presets for common providers (Gmail, Outlook, Yahoo),
@@ -8,10 +8,12 @@ connection testing, and test email sending.
 import flet as ft
 
 from config.settings import THEME_PRIMARY_COLOR
+from core.theme_manager import theme_manager
 from ui.components import AppHeader, SnackBarHelper
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 # Preset configurations for common SMTP providers
 SMTP_PRESETS = {
@@ -45,25 +47,26 @@ SMTP_PRESETS = {
 
 async def show_smtp_config(app):
     """Display SMTP configuration form with provider presets."""
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
 
     # Load current config
     smtp_cfg = {}
     if app.controller.has_permission("notificaciones.configurar"):
         try:
             smtp_cfg = await app.controller.obtener_config_smtp()
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener config SMTP: %s", e)
             smtp_cfg = {}
 
     # Create form fields
     provider_dropdown = ft.Dropdown(
         label="Proveedor de Email",
-        options=[ft.dropdown.Option(key=k) for k in SMTP_PRESETS.keys()],
+        options=[ft.dropdown.Option(key=k) for k in SMTP_PRESETS],
         value="Gmail",
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
+        fill_color=palette["input_fill"],
         on_change=lambda e: _apply_preset(e.control.value),
         width=300,
     )
@@ -72,30 +75,30 @@ async def show_smtp_config(app):
         label="Servidor SMTP (Host)",
         value=smtp_cfg.get("host", SMTP_PRESETS["Gmail"]["host"]),
         width=300,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
+        fill_color=palette["input_fill"],
     )
 
     port_field = ft.TextField(
         label="Puerto",
         value=smtp_cfg.get("port", SMTP_PRESETS["Gmail"]["port"]),
         width=100,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
+        fill_color=palette["input_fill"],
     )
 
     user_field = ft.TextField(
         label="Usuario / Email",
         value=smtp_cfg.get("user", ""),
         width=420,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
+        fill_color=palette["input_fill"],
     )
 
     password_field = ft.TextField(
@@ -104,20 +107,20 @@ async def show_smtp_config(app):
         width=420,
         password=True,
         can_reveal_password=True,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
+        fill_color=palette["input_fill"],
     )
 
     from_email_field = ft.TextField(
         label="Email del Remitente",
         value=smtp_cfg.get("from_email", ""),
         width=420,
-        border_color=C["input_border"],
-        focused_border_color=C["focus_ring"],
+        border_color=palette["input_border"],
+        focused_border_color=palette["focus_ring"],
         filled=True,
-        fill_color=C["input_fill"],
+        fill_color=palette["input_fill"],
     )
 
     enabled_switch = ft.Switch(
@@ -128,7 +131,7 @@ async def show_smtp_config(app):
     note_text = ft.Text(
         SMTP_PRESETS["Gmail"]["note"],
         size=12,
-        color=C["text_muted"],
+        color=palette["text_muted"],
         italic=True,
     )
 
@@ -160,7 +163,7 @@ async def show_smtp_config(app):
             status_text.color = "green"
             app.page.update()
         except Exception as ex:
-            SnackBarHelper.error(app.page, f"Error al guardar: {ex}")
+            SnackBarHelper.error(app.page, "Error al guardar configuración SMTP.")
             status_text.value = f"✗ Error: {ex}"
             status_text.color = "red"
             app.page.update()
@@ -168,7 +171,7 @@ async def show_smtp_config(app):
     async def handle_test_connection(e):
         """Test SMTP connection."""
         status_text.value = "Probando conexión..."
-        status_text.color = C["text_muted"]
+        status_text.color = palette["text_muted"]
         app.page.update()
 
         try:
@@ -194,14 +197,14 @@ async def show_smtp_config(app):
         except Exception as ex:
             status_text.value = f"✗ Error: {ex}"
             status_text.color = "red"
-            SnackBarHelper.error(app.page, f"Error SMTP: {ex}")
+            SnackBarHelper.error(app.page, "Error en la conexión SMTP.")
 
         app.page.update()
 
     async def handle_send_test(e):
         """Send a test email."""
         status_text.value = "Enviando email de prueba..."
-        status_text.color = C["text_muted"]
+        status_text.color = palette["text_muted"]
         app.page.update()
 
         try:
@@ -230,7 +233,7 @@ async def show_smtp_config(app):
         except Exception as ex:
             status_text.value = f"✗ Error: {ex}"
             status_text.color = "red"
-            SnackBarHelper.error(app.page, f"Error: {ex}")
+            SnackBarHelper.error(app.page, "Error al enviar el correo de prueba.")
 
         app.page.update()
 
@@ -245,7 +248,7 @@ async def show_smtp_config(app):
                     [
                         # Provider preset
                         ft.Text(
-                            "Proveedor", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]
+                            "Proveedor", size=14, weight=ft.FontWeight.BOLD, color=palette["text_primary"]
                         ),
                         provider_dropdown,
                         note_text,
@@ -255,7 +258,7 @@ async def show_smtp_config(app):
                             "Servidor SMTP",
                             size=14,
                             weight=ft.FontWeight.BOLD,
-                            color=C["text_primary"],
+                            color=palette["text_primary"],
                         ),
                         ft.Row([host_field, port_field], spacing=10),
                         ft.Divider(),
@@ -264,20 +267,20 @@ async def show_smtp_config(app):
                             "Credenciales",
                             size=14,
                             weight=ft.FontWeight.BOLD,
-                            color=C["text_primary"],
+                            color=palette["text_primary"],
                         ),
                         user_field,
                         password_field,
                         ft.Divider(),
                         # Sender
                         ft.Text(
-                            "Remitente", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]
+                            "Remitente", size=14, weight=ft.FontWeight.BOLD, color=palette["text_primary"]
                         ),
                         from_email_field,
                         ft.Divider(),
                         # Options
                         ft.Text(
-                            "Opciones", size=14, weight=ft.FontWeight.BOLD, color=C["text_primary"]
+                            "Opciones", size=14, weight=ft.FontWeight.BOLD, color=palette["text_primary"]
                         ),
                         enabled_switch,
                         ft.Divider(),
@@ -307,7 +310,7 @@ async def show_smtp_config(app):
                     spacing=12,
                 ),
                 padding=20,
-                bgcolor=C["surface"],
+                bgcolor=palette["surface"],
                 border_radius=12,
             ),
         ],

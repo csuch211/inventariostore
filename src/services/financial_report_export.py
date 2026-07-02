@@ -58,7 +58,7 @@ class FinancialReportExporter:
             elements = []
 
             # Title
-            styles = getSampleStyleSheet()
+            getSampleStyleSheet()
             elements.append(Spacer(1, 0.5 * inch))
 
             # Ingresos table
@@ -109,9 +109,8 @@ class FinancialReportExporter:
         try:
             from reportlab.lib import colors
             from reportlab.lib.pagesizes import letter
-            from reportlab.lib.styles import getSampleStyleSheet
             from reportlab.lib.units import inch
-            from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle
+            from reportlab.platypus import SimpleDocTemplate, Spacer
 
             if not filename:
                 filename = f"balance_general_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -177,7 +176,6 @@ class FinancialReportExporter:
         try:
             from reportlab.lib import colors
             from reportlab.lib.pagesizes import letter
-            from reportlab.lib.styles import getSampleStyleSheet
             from reportlab.lib.units import inch
             from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle
 
@@ -239,7 +237,7 @@ class FinancialReportExporter:
             raise InventarioException(f"Export failed: {e}")
 
 
-def _make_section_table(title: str, items: list, total: float, color) -> Table:
+def _make_section_table(title: str, items: list, total: float, color):
     """Create a section table for financial reports."""
     from reportlab.lib import colors as rl_colors
     from reportlab.lib.units import inch
@@ -263,7 +261,7 @@ def _make_section_table(title: str, items: list, total: float, color) -> Table:
     return table
 
 
-def _make_footer(text: str) -> Table:
+def _make_footer(text: str):
     """Create a footer for financial reports."""
     from reportlab.lib.units import inch
     from reportlab.platypus import Table, TableStyle

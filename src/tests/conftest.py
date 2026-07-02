@@ -27,13 +27,14 @@ os.environ["INV_ADMIN_USER"] = "admin"
 os.environ["INV_ADMIN_PASSWORD"] = "Admin123"
 os.environ["INV_OPERATOR_USER"] = "usuario"
 os.environ["INV_OPERATOR_PASSWORD"] = "Usuario123"
+os.environ["JWT_SECRET_KEY"] = "test-jwt-secret-key-for-testing-only-not-for-production"
 
-import config.settings as _settings  # noqa: E402
+import config.settings as _settings
 
 _settings.DATABASE_FILE = _TMP_DB_DIR / "test.db"
 
-from core.controller import InventarioController  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS  # noqa: E402
+from core.controller import InventarioController
+from services.permissions import ALL_PERMISSION_KEYS
 
 
 @pytest.fixture(scope="session", autouse=True)

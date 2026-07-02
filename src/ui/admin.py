@@ -1,4 +1,4 @@
-"""
+"""Admin views (users, backups, settings) refactored for clarity.
 Admin views (users, backups, settings) extracted from AppView.
 
 Each function takes an ``app`` parameter (the AppView instance) and uses
@@ -15,7 +15,8 @@ from config.settings import (
     THEME_ACCENT_COLOR,
     THEME_PRIMARY_COLOR,
 )
-from services.permissions import Perm as P
+from core.theme_manager import theme_manager
+from services.permissions import Perm
 from ui.components import (
     AppHeader,
     DialogHelper,
@@ -23,14 +24,15 @@ from ui.components import (
     SnackBarHelper,
 )
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 
 async def show_users(app):
     """Display users management view with role + permission editing."""
-    can_manage = P.USUARIOS_GESTIONAR in app.controller.current_user_permissions
+    can_manage = Perm.USUARIOS_GESTIONAR in app.controller.current_user_permissions
 
     usuarios = await app.controller.obtener_usuarios_con_roles()
     roles = await app.controller.obtener_roles()
@@ -293,7 +295,7 @@ async def show_user_perms_dialog(app, usuario, roles, catalogo):
 
 async def show_backups(app):
     """Display backup management view."""
-    can_restore = P.BACKUPS_RESTAURAR in app.controller.current_user_permissions
+    can_restore = Perm.BACKUPS_RESTAURAR in app.controller.current_user_permissions
     backups = await app.controller.listar_backups()
 
     async def handle_create(e):
@@ -471,10 +473,10 @@ async def show_settings(app):
 
     smtp_cfg = (
         await app.controller.obtener_config_smtp()
-        if app.controller.has_permission(P.NOTIFICACIONES_CONFIGURAR)
+        if app.controller.has_permission(Perm.NOTIFICACIONES_CONFIGURAR)
         else {}
     )
-    settings_c = app._get_colors()
+    settings_c = theme_manager.palette(page=app.page)
 
     def _settings_field(label, value, width=300, password=False):
         return ft.TextField(
@@ -572,6 +574,18 @@ async def show_settings(app):
                                 ),
                             ),
                         ),
+                        ft.ListTile(
+                            title=ft.Text("WhatsApp / Telegram"),
+                            subtitle=ft.Text("Configurar canales de mensajería"),
+                            trailing=ft.IconButton(
+                                icon=ft.icons.Icons.CHAT,
+                                icon_color=THEME_PRIMARY_COLOR,
+                                tooltip="Configurar Mensajería",
+                                on_click=lambda e: asyncio.create_task(
+                                    app._navigate_to("messaging")
+                                ),
+                            ),
+                        ),
                         ft.Container(
                             content=ft.Column(
                                 [
@@ -598,7 +612,7 @@ async def show_settings(app):
                             ),
                             padding=20,
                         )
-                        if app.controller.has_permission(P.NOTIFICACIONES_CONFIGURAR)
+                        if app.controller.has_permission(Perm.NOTIFICACIONES_CONFIGURAR)
                         else ft.Container(),
                     ],
                     spacing=10,

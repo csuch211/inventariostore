@@ -1,4 +1,4 @@
-"""Document management views.
+"""Document management views, refactored for clarity.
 
 Provides UI for documents, categories, versions, and tags.
 """
@@ -7,12 +7,18 @@ import asyncio
 
 import flet as ft
 
-from config.settings import THEME_PRIMARY_COLOR, THEME_SUCCESS_COLOR, THEME_WARNING_COLOR, THEME_ACCENT_COLOR
+from config.settings import (
+    THEME_ACCENT_COLOR,
+    THEME_PRIMARY_COLOR,
+    THEME_SUCCESS_COLOR,
+    THEME_WARNING_COLOR,
+)
 from ui.components import AppHeader, FormField, SnackBarHelper
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 
 # ============ Documentos ============
@@ -20,7 +26,6 @@ logger = setup_logger(__name__)
 
 async def show_documentos(app):
     """Display documents management view."""
-    C = app._get_colors()
     controller = app.controller
 
     tipo_filter = ft.Dropdown(
@@ -42,7 +47,8 @@ async def show_documentos(app):
         tipo = tipo_filter.value or None
         try:
             documentos = await controller.obtener_documentos(tipo=tipo)
-        except Exception:
+        except Exception as e:
+            logger.error("Error al obtener documentos: %s", e)
             documentos = []
 
         rows = []

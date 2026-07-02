@@ -1,4 +1,4 @@
-"""
+"""Stock / warehouse views, refactored for clarity.
 Stock / warehouse views extracted from AppView.
 
 Each function takes an ``app`` parameter (the AppView instance) and uses
@@ -15,15 +15,17 @@ from config.settings import (
     THEME_PRIMARY_COLOR,
     THEME_WARNING_COLOR,
 )
+from core.theme_manager import theme_manager
 from ui.components import (
     AppHeader,
     FormField,
     SnackBarHelper,
 )
 from utils.i18n import t
-from utils.logger import setup_logger
 
-logger = setup_logger(__name__)
+from ._utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def _kpi_card(label: str, value: str, color: str, bg: str, text_color: str) -> ft.Container:
@@ -102,7 +104,7 @@ async def show_stock_alerts(app):
       - ok:       everything else (filtered out by the query)
     """
     alertas = await app.controller.obtener_alertas_stock()
-    C = app._get_colors()
+    palette = theme_manager.palette(page=app.page)
 
     criticas = [p for p in alertas if p.get("alert_level") == "critical"]
     bajas = [p for p in alertas if p.get("alert_level") == "low"]
@@ -135,8 +137,8 @@ async def show_stock_alerts(app):
             rows.append(
                 ft.DataRow(
                     cells=[
-                        ft.DataCell(ft.Text(str(p.get("codigo", "")), color=C["text_primary"])),
-                        ft.DataCell(ft.Text(str(p.get("nombre", "")), color=C["text_primary"])),
+                        ft.DataCell(ft.Text(str(p.get("codigo", "")), color=palette["text_primary"])),
+                        ft.DataCell(ft.Text(str(p.get("nombre", "")), color=palette["text_primary"])),
                         ft.DataCell(
                             ft.Text(
                                 qty_text,
@@ -144,11 +146,11 @@ async def show_stock_alerts(app):
                                 weight=ft.FontWeight.BOLD,
                             )
                         ),
-                        ft.DataCell(ft.Text(str(p.get("stock_min", 0)), color=C["text_primary"])),
+                        ft.DataCell(ft.Text(str(p.get("stock_min", 0)), color=palette["text_primary"])),
                         ft.DataCell(
-                            ft.Text(str(p.get("categoria", "") or "-"), color=C["text_secondary"])
+                            ft.Text(str(p.get("categoria", "") or "-"), color=palette["text_secondary"])
                         ),
-                        ft.DataCell(_alert_badge(p.get("alert_level", "low"), C)),
+                        ft.DataCell(_alert_badge(p.get("alert_level", "low"), palette)),
                     ]
                 )
             )
@@ -164,17 +166,17 @@ async def show_stock_alerts(app):
             ft.DataColumn(ft.Text(t("stock_alerts.alert_level"))),
         ],
         rows=build_rows(),
-        heading_row_color=C["table_heading"],
+        heading_row_color=palette["table_heading"],
         heading_text_style=ft.TextStyle(color="white", weight=ft.FontWeight.BOLD),
-        data_row_color=C["table_row"],
+        data_row_color=palette["table_row"],
         border=ft.border.Border(
-            ft.BorderSide(1, C["divider"]),
-            ft.BorderSide(1, C["divider"]),
-            ft.BorderSide(1, C["divider"]),
-            ft.BorderSide(1, C["divider"]),
+            ft.BorderSide(1, palette["divider"]),
+            ft.BorderSide(1, palette["divider"]),
+            ft.BorderSide(1, palette["divider"]),
+            ft.BorderSide(1, palette["divider"]),
         ),
-        horizontal_lines=ft.BorderSide(0.5, C["divider"]),
-        vertical_lines=ft.BorderSide(0.5, C["divider"]),
+        horizontal_lines=ft.BorderSide(0.5, palette["divider"]),
+        vertical_lines=ft.BorderSide(0.5, palette["divider"]),
         sort_column_index=2,
         sort_ascending=True,
     )
@@ -189,22 +191,22 @@ async def show_stock_alerts(app):
                 label=t("stock_alerts.tabs.critical"),
                 value=str(len(criticas)),
                 color=THEME_DANGER,
-                bg=C["surface"],
-                text_color=C["text_primary"],
+                bg=palette["surface"],
+                text_color=palette["text_primary"],
             ),
             _kpi_card(
                 label=t("stock_alerts.tabs.low"),
                 value=str(len(bajas)),
                 color=THEME_WARNING_COLOR,
-                bg=C["surface"],
-                text_color=C["text_primary"],
+                bg=palette["surface"],
+                text_color=palette["text_primary"],
             ),
             _kpi_card(
                 label=t("stock_alerts.tabs.all"),
                 value=str(len(alertas)),
                 color=THEME_PRIMARY_COLOR,
-                bg=C["surface"],
-                text_color=C["text_primary"],
+                bg=palette["surface"],
+                text_color=palette["text_primary"],
             ),
         ],
         spacing=12,
@@ -224,7 +226,7 @@ async def show_stock_alerts(app):
         label=t("common.search"),
         hint=t("stock_alerts.search_hint"),
         page=app.page,
-        colors=C,
+        colors=palette,
     )
 
     def _switch_tab(idx: int) -> None:
@@ -251,8 +253,8 @@ async def show_stock_alerts(app):
             svc = ExportService()
             out = svc.export_to_csv(filtered)
             SnackBarHelper.success(app.page, t("export.success", path=str(out)))
-        except Exception as ex:
-            SnackBarHelper.error(app.page, str(ex))
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar a CSV.")
 
     async def handle_export_pdf(_e):
         filtered = await _filtered_alerts()
@@ -276,8 +278,8 @@ async def show_stock_alerts(app):
                 ],
             )
             SnackBarHelper.success(app.page, t("export.success", path=str(out)))
-        except Exception as ex:
-            SnackBarHelper.error(app.page, str(ex))
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar a PDF.")
 
     async def handle_export_xlsx(_e):
         filtered = await _filtered_alerts()
@@ -301,8 +303,8 @@ async def show_stock_alerts(app):
                 ],
             )
             SnackBarHelper.success(app.page, t("export.success", path=str(out)))
-        except Exception as ex:
-            SnackBarHelper.error(app.page, str(ex))
+        except Exception:
+            SnackBarHelper.error(app.page, "Error al exportar a Excel.")
 
     async def handle_email_alert(_e):
         if not alertas:
@@ -350,7 +352,7 @@ async def show_stock_alerts(app):
     search.expand = True
 
     body = ft.Container(
-        content=table if alertas else _empty_state(C),
+        content=table if alertas else _empty_state(palette),
         padding=20,
         expand=True,
     )
@@ -373,7 +375,7 @@ async def show_stock_alerts(app):
     def _rerender_table():
         new_rows = build_rows()
         table.rows = new_rows
-        body.content = table if new_rows else _empty_state(C, filtered=True)
+        body.content = table if new_rows else _empty_state(filtered=True)
         app.page.update()
 
     content = ft.Column(
@@ -412,7 +414,8 @@ async def show_warehouses(app):
     async def handle_delete(e, alm):
         def confirm(ev):
             app.page.pop_dialog()
-            asyncio.create_task(_do_delete(alm))
+            task = asyncio.create_task(_do_delete(alm))
+            task.add_done_callback(lambda t: None)
 
         dialog = ft.AlertDialog(
             title=ft.Text(t("common.delete")),
@@ -615,7 +618,7 @@ async def show_warehouse_inventory(app, almacen):
 
     async def adjust_stock(item):
         pid = item["producto_id"]
-        wh_c = app._get_colors()
+        wh_c = theme_manager.palette(page=app.page)
         qty = ft.TextField(
             label=t("warehouses.new_qty"),
             value=str(item.get("cantidad", 0)),
