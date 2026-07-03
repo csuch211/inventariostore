@@ -52,7 +52,21 @@ exclude = ["__pycache__", ".git", ".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "YTT", "SIM", "PL", "RUF"]
-ignore = ["PLR2004", "PLR0913", "PLR0915", "SIM117"]
+ignore = [
+    "PLR2004",   # magic-value-comparison
+    "PLR0913",   # too-many-arguments
+    "PLR0915",   # too-many-statements
+    "SIM117",    # multiple-with-statements
+    "E501",      # line-too-long (SQL strings, UI code)
+    "PLC0415",   # import-outside-top-level (lazy imports to avoid circular deps)
+    "E402",      # module-import-not-at-top-of-file (test setup, sys.path)
+    "N806",      # non-lowercase-variable-in-function (C for colors convention)
+    "N801",      # invalid-class-name (mock classes in tests)
+    "N802",      # invalid-function-name (stdlib overrides)
+    "PLR0912",   # too-many-branches (complex but acceptable logic)
+    "PLR0911",   # too-many-return-statements (validation pattern)
+    "PLW0603",   # global-statement (singleton cache pattern)
+]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["PLR", "SIM"]

@@ -356,8 +356,8 @@ async def show_pipeline(app):
     async def open_new(e):
         try:
             contactos = await controller.obtener_contactos()
-        except Exception as e:
-            logger.error("Error al obtener contactos para oportunidad: %s", e)
+        except Exception as exc:
+            logger.error("Error al obtener contactos para oportunidad: %s", exc)
             contactos = []
 
         contacto_opts = [f"{c.get('id')} — {c.get('nombre', '')} {c.get('apellido', '')}" for c in contactos]

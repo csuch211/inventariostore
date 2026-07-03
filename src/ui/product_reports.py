@@ -347,8 +347,8 @@ async def show_reportes(app):
     async def open_new(e):
         try:
             modulos = await controller.obtener_modulos_reporte()
-        except Exception as e:
-            logger.error("Error al obtener módulos de reporte: %s", e)
+        except Exception as exc:
+            logger.error("Error al obtener módulos de reporte: %s", exc)
             modulos = []
 
         nombre = FormField.create_text_field("Nombre del reporte")

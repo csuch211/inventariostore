@@ -34,18 +34,18 @@ _SRC = Path(__file__).resolve().parents[1]
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request  # noqa: E402
-from pydantic import BaseModel, Field  # noqa: E402
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from pydantic import BaseModel, Field
 
-from api.rate_limiter import RateLimitMiddleware  # noqa: E402
-from config.settings import ACCESS_TOKEN_EXPIRE_MINUTES, CORS_ORIGINS, DEBUG  # noqa: E402
-from core.controller import InventarioController  # noqa: E402
-from services.database import DatabaseManager  # noqa: E402
-from services.messaging import send_via_channel  # noqa: E402
-from services.notifier import get_smtp_config, is_configured, send_custom_alert  # noqa: E402
-from services.permissions import ALL_PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS  # noqa: E402
-from utils.crypto import encrypt_value  # noqa: E402
-from utils.logger import setup_logger  # noqa: E402
+from api.rate_limiter import RateLimitMiddleware
+from config.settings import ACCESS_TOKEN_EXPIRE_MINUTES, CORS_ORIGINS, DEBUG
+from core.controller import InventarioController
+from services.database import DatabaseManager
+from services.messaging import send_via_channel
+from services.notifier import get_smtp_config, is_configured, send_custom_alert
+from services.permissions import ALL_PERMISSION_KEYS, ROLE_DEFAULT_PERMISSIONS
+from utils.crypto import encrypt_value
+from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
@@ -209,7 +209,7 @@ def _resolve_user_perms(db: DatabaseManager, username: str):
 
 # ----- App -----
 
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Inventariostore REST API",

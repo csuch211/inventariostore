@@ -202,8 +202,8 @@ async def show_facturas(app):
         # Get clients for dropdown
         try:
             clientes = await controller.obtener_clientes()
-        except Exception as e:
-            logger.error("Error al obtener clientes: %s", e)
+        except Exception as exc:
+            logger.error("Error al obtener clientes: %s", exc)
             clientes = []
 
         cliente_opts = [f"{c.get('id')} — {c.get('nombre', '')}" for c in clientes]

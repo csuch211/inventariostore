@@ -13,6 +13,7 @@ from __future__ import annotations
 import importlib
 import pkgutil
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -93,7 +94,7 @@ class TestFacadeForwarding:
     3. The re-exported class should be the same object as the original
     """
 
-    FACADE_CHECKS: list = [
+    FACADE_CHECKS: ClassVar[list] = [
         # (facade_module, export_name, expected_original)
         ("modules.products.controllers.product_controller", "ProductController",
          "core.controllers.product_controller.ProductController"),
@@ -458,8 +459,8 @@ class TestPermissionsIntegration:
         from services.permissions import PermissionException, require_permission
 
         class FakeController:
-            current_user_permissions: set[str] = set()
-            current_user: str = "test"
+            current_user_permissions: ClassVar[set[str]] = set()
+            current_user: ClassVar[str] = "test"
 
         fake = FakeController()
         decorated = require_permission("productos.crear")(lambda self: None)

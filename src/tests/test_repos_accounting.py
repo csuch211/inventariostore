@@ -36,7 +36,7 @@ class TestAccountingRepository:
             {"cuenta_codigo": "1101", "cuenta_nombre": "Caja", "debito": 1000, "credito": 0},
             {"cuenta_codigo": "4101", "cuenta_nombre": "Ventas", "debito": 0, "credito": 500},
         ]
-        with pytest.raises(DatabaseException, match="Debits.*must equal credits"):
+        with pytest.raises(DatabaseException, match=r"Debits.*must equal credits"):
             accounting_repo.crear_asiento(
                 fecha=f"{_YEAR}-01-15",
                 descripcion="Unbalanced",

@@ -63,6 +63,7 @@ class AppView:
         self.main_view = None
         self.products_table = None
         self.search_field = self._create_search_field()
+        self._palette = theme_manager.palette(page=self.page)
         self.page_info_text = ft.Text("")
         self._sidebar_nav = None
         self._scanner_file_picker = None

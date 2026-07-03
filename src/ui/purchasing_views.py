@@ -148,8 +148,8 @@ async def show_cotizaciones(app):
     async def open_new(e):
         try:
             proveedores = await controller.obtener_proveedores()
-        except Exception as e:
-            logger.error("Error al obtener proveedores: %s", e)
+        except Exception as exc:
+            logger.error("Error al obtener proveedores: %s", exc)
             proveedores = []
 
         proveedor_opts = [f"{p.get('id')} — {p.get('nombre', '')}" for p in proveedores]
